@@ -3,4 +3,5 @@ npx cap copy
 cd android
 gradlew assembleDebug
 cd ..
-npx run cap android
+npx cap sync android
+npx cap run android

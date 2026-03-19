@@ -1,4 +1,6 @@
 <template>
+  <DevPalette />
+  <!--Main part-->
   <div class="min-h-screen flex items-center justify-center bg-gray-100">
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
       <h2 class="text-2xl font-bold mb-6 text-center">{{ mode === 'login' ? 'Вход' : 'Регистрация' }}</h2>
@@ -70,6 +72,7 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAccountsStore } from '@/stores/accounts'
 import { useRouter } from 'vue-router'
+import DevPalette from '@/components/DevPalette.vue'
 
 const authStore = useAuthStore()
 const accountsStore = useAccountsStore()

@@ -11,6 +11,7 @@ export default defineConfig({
     vue(),
     vueDevTools(),
     tailwindcss(),
+    require("@designbycode/tailwindcss-stripes"),
   ],
   base: './',
   resolve: {

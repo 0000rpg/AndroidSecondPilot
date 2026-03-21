@@ -1,63 +1,61 @@
 <template>
-  <RouterLink :to="{ name: 'dev' }">DEV</RouterLink>
-  <RouterLink :to="{ name: 'building' }">BUILDING</RouterLink>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100">
-    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
-      <h2 class="text-2xl font-bold mb-6 text-center">{{ mode === 'login' ? 'Вход' : 'Регистрация' }}</h2>
+  <div class="bg-q13 min-h-screen flex flex-col justify-center items-center transition-all ease-in-out duration-300">
+    <div class="bg-q3 m-5 rounded-2xl border-q5 border-5 max-w-md w-full max-h-md h-full flex flex-col items-center transition-all ease-in-out duration-300">
+      <h2 class="text-q7 m-5 text-center text-5xl font-bold">{{ mode === 'login' ? 'Вход' : 'Регистрация' }}</h2>
 
-      <div class="flex mb-4 border-b">
+      <div class="flex justify-between w-full p-5 border-t-2 border-q5 text-2xl transition-all ease-in-out duration-300">
         <button
           @click="mode = 'login'"
-          class="flex-1 py-2 text-center"
-          :class="mode === 'login' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'"
+          class="flex-1 p-2 transition-all duration-100"
+          :class="mode === 'login' ? 'border-b-2 border-q1 text-q1 font-medium' : 'text-q6 hover:text-q2'"
         >Вход</button>
         <button
           @click="mode = 'register'"
-          class="flex-1 py-2 text-center"
-          :class="mode === 'register' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'"
+          class="flex-1 p-2 transition-all duration-100"
+          :class="mode === 'register' ? 'border-b-2 border-q1 text-q1 font-medium' : 'text-q6 hover:text-q2'"
         >Регистрация</button>
       </div>
 
-      <form @submit.prevent="handleSubmit">
-        <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="username">Имя пользователя</label>
+      <form @submit.prevent="handleSubmit" class="space-y-5 w-full">
+        <div class="p-5">
+          <label class="block text-q7 font-medium">Имя пользователя</label>
           <input
             id="username"
             v-model="username"
             type="text"
             required
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="bg-stripes-diagonal-transparent w-full px-4 py-2 border border-q5 rounded-lg transition-all focus:border-q2 focus:border-2 focus:outline-none text-q7"
           />
         </div>
 
-        <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Пароль</label>
+        <div class="p-5">
+          <label class="block text-q7 font-medium">Пароль</label>
           <input
             id="password"
             v-model="password"
             type="password"
             required
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="bg-stripes-diagonal-transparent w-full px-4 py-2 border border-q5 rounded-lg transition-all focus:border-q2 focus:border-2 focus:outline-none text-q7"
           />
         </div>
 
-        <div v-if="mode === 'register'" class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="confirmPassword">Подтверждение пароля</label>
+        <div v-if="mode === 'register'" class="p-5">
+          <label class="block text-q7 font-medium">Подтверждение пароля</label>
           <input
             id="confirmPassword"
             v-model="confirmPassword"
             type="password"
             required
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="bg-stripes-diagonal-transparent w-full px-4 py-2 border border-q5 rounded-lg transition-all focus:border-q2 focus:border-2 focus:outline-none text-q7"
           />
         </div>
 
-        <div v-if="errorMessage" class="mb-4 text-red-500 text-sm">{{ errorMessage }}</div>
+        <div v-if="errorMessage" class="p-x-5 text-red-700 font-medium flex justify-center">{{ errorMessage }}</div>
 
-        <div class="flex items-center justify-between">
+        <div class="py-2 px-5 flex justify-center">
           <button
             type="submit"
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+            class="bg-q1 hover:bg-q2 w-full p-2 border-2 border-q5 hover:border-q6 text-lg text-q7 font-bold rounded-2xl transition-all ease-in-out duration-300"
           >
             {{ mode === 'login' ? 'Войти' : 'Зарегистрироваться' }}
           </button>

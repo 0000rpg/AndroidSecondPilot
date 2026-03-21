@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import LoginView from '../views/LoginView.vue'
-import MainView from '../views/MainView.vue'
+import LoginView from '@/views/LoginView.vue'
+import MainView from '@/views/MainView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -16,6 +16,18 @@ const router = createRouter({
       name: 'main',
       component: MainView,
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/dev',
+      name: 'dev',
+      component: () => import('@/views/DevPlayground.vue'),
+      mets: { requiresAuth: false }
+    },
+    {
+      path: '/underConstruct',
+      name: 'building',
+      component: () => import('@/views/UnderConstruct.vue'),
+      mets: { requiresAuth: false }
     }
   ],
 })

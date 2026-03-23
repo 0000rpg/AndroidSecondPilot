@@ -1,34 +1,24 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-theme: #ed6c21;
-  --color-header: #18191a;
-  --color-background: #1c1e21;
-  --color-text: #f5f5f5;
-  --color-snow: #ffffff;
-  --color-border: #5c5c5c;
-  --color-border-accent: #757575;
-  --color-marker: #b3b3b3;
-  --color-accent: rgb(255, 145, 35);
-  --color-section: rgba(34, 36, 39, 0.8);
-  --color-aside-action: rgba(43, 45, 48, 0.8);
-  --color-cell-header: rgba(47, 49, 53, 0.4);
-  --color-cell-even: rgba(45, 47, 51, 0.8);
-  
-  --color-q1: rgba(237, 108, 33, 1);
-  --color-q2: rgba(255, 145, 35, 1);
-  --color-q3: rgba(24, 25, 26, 1);
-  --color-q4: rgba(47, 48, 48, 1);
-  --color-q5: rgba(92, 92, 92, 1);
-  --color-q6: rgba(117, 117, 117, 1);
-  --color-q7: rgba(255, 255, 255, 1);
-  --color-q8: rgba(240, 240, 240, 1);
-  --color-q9: rgba(24, 25, 26, 0.8);
-  --color-q10: rgba(24, 25, 26, 0.6);
-  --color-q11: rgba(117, 117, 117, 0.8);
-  --color-q12: rgba(117, 117, 117, 0.6);
-  --color-q13: rgba(21, 16, 16, 1);
-  --color-q14: rgba(117, 117, 117, 0.4);
+  --color-theme: rgba(237, 108, 33, 1);
+  --color-theme-a: rgba(255, 145, 35, 1);
+  --color-main: rgba(24, 25, 26, 1);
+  --color-main-a: rgba(47, 48, 48, 1);
+  --color-border: rgba(92, 92, 92, 1);
+  --color-border-a: rgba(117, 117, 117, 1);
+  --color-text: rgba(255, 255, 255, 1);
+  --color-text-a: rgba(240, 240, 240, 1);
+  --color-main-td: rgba(24, 25, 26, 0.8);
+  --color-main-td-a: rgba(24, 25, 26, 0.6);
+  --color-main-tb: rgba(117, 117, 117, 0.8);
+  --color-main-tb-a: rgba(117, 117, 117, 0.6);
+  --color-background: rgba(21, 16, 16, 1);
+  --color-glass: rgba(117, 117, 117, 0.4);
+  --color-correct: rgba(67, 195, 17, 1);
+  --color-correct-a: rgba(67, 235, 17, 1);
+  --color-error: rgba(193, 0, 7, 1);
+  --color-error-a: rgba(153, 0, 7, 1);
 }
 
 @utility bg-stripes-diagonal-transparent {
@@ -36,17 +26,43 @@
     45deg,
     transparent 0px,
     transparent 8px,
-    var(--color-q14) 8px,
-    var(--color-q14) 10px
+    var(--color-glass) 8px,
+    var(--color-glass) 10px
   );
+}
+
+@utility bg-stripes-error {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0px,
+    transparent 8px,
+    var(--color-error-a) 8px,
+    var(--color-error-a) 10px
+  );
+}
+
+@utility bg-stripes-correct {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0px,
+    transparent 8px,
+    var(--color-correct) 8px,
+    var(--color-correct) 10px
+  );
+}
+
+@layer base {
+  h2 {
+    @apply text-text border-border m-5 w-full border-b-2 pb-5 text-center text-4xl font-bold;
+  }
 }
 
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px var(--color-q12) inset !important;
-  box-shadow: 0 0 0 1000px var(--color-q12) inset !important;
-  -webkit-text-fill-color: var(--color-q7) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-main-tb-a) inset !important;
+  box-shadow: 0 0 0 1000px var(--color-main-tb-a) inset !important;
+  -webkit-text-fill-color: var(--color-text) !important;
   transition: background-color 5000s ease-in-out 0s; /* для Firefox */
 }

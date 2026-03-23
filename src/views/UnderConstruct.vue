@@ -1,64 +1,65 @@
 <template>
-  <div class="bg-q13 min-h-screen flex flex-col justify-center items-center transition-all ease-in-out duration-300">
-    <div class="bg-q3 m-5 rounded-2xl border-q5 border-5 max-w-md w-full max-h-md h-full flex flex-col items-center transition-all ease-in-out duration-300">
-      <h2 class="text-q7 m-5 text-center text-5xl font-bold">{{ mode === 'login' ? 'Вход' : 'Регистрация' }}</h2>
+  <div
+    class="bg-background flex min-h-screen flex-col items-center justify-center p-1 transition-all duration-300 ease-in-out"
+  >
+    <div
+      class="bg-main border-border max-h-md m-5 flex h-full w-full max-w-md flex-col items-center rounded-2xl border-5 transition-all duration-300 ease-in-out"
+    >
+      <h2>
+        {{ state === 'login' ? 'Вход' : 'Регистрация' }}
+      </h2>
+      <Tabs v-model="state" :items="tabs" />
 
-      <div class="flex justify-between w-full p-5 border-t-2 border-q5 text-2xl transition-all ease-in-out duration-300">
-        <button
-          @click="mode = 'login'"
-          class="flex-1 p-2 transition-all duration-100"
-          :class="mode === 'login' ? 'border-b-2 border-q1 text-q1 font-medium' : 'text-q6 hover:text-q2'"
-        >Вход</button>
-        <button
-          @click="mode = 'register'"
-          class="flex-1 p-2 transition-all duration-100"
-          :class="mode === 'register' ? 'border-b-2 border-q1 text-q1 font-medium' : 'text-q6 hover:text-q2'"
-        >Регистрация</button>
-      </div>
-
-      <form @submit.prevent="handleSubmit" class="space-y-5 w-full">
+      <form @submit.prevent="handleSubmit" class="w-full space-y-5">
         <div class="p-5">
-          <label class="block text-q7 font-medium">Имя пользователя</label>
-          <input
+          <label class="text-text block font-medium">Имя пользователя</label>
+          <Input
             id="username"
             v-model="username"
             type="text"
             required
-            class="bg-stripes-diagonal-transparent w-full px-4 py-2 border border-q5 rounded-lg transition-all focus:border-q2 focus:border-2 focus:outline-none text-q7"
+            @blur="validateUsernameField"
+            @input="usernameErrors = []"
           />
+          <div v-if="usernameErrors.length" class="text-error mt-2 space-y-1 text-sm">
+            <p v-for="(err, idx) in usernameErrors" :key="idx">{{ err }}</p>
+          </div>
         </div>
 
         <div class="p-5">
-          <label class="block text-q7 font-medium">Пароль</label>
-          <input
+          <label class="text-text block font-medium">Пароль</label>
+          <Input
             id="password"
             v-model="password"
             type="password"
             required
-            class="bg-stripes-diagonal-transparent w-full px-4 py-2 border border-q5 rounded-lg transition-all focus:border-q2 focus:border-2 focus:outline-none text-q7"
+            @blur="validatePasswordField"
           />
+          <div v-if="passwordErrors.length" class="text-error mt-2 space-y-1 text-sm">
+            <p v-for="(err, idx) in passwordErrors" :key="idx">{{ err }}</p>
+          </div>
         </div>
 
-        <div v-if="mode === 'register'" class="p-5">
-          <label class="block text-q7 font-medium">Подтверждение пароля</label>
-          <input
+        <div v-if="state === 'register'" class="p-5">
+          <label class="text-text block font-medium">Подтверждение пароля</label>
+          <Input
             id="confirmPassword"
             v-model="confirmPassword"
             type="password"
             required
-            class="bg-stripes-diagonal-transparent w-full px-4 py-2 border border-q5 rounded-lg transition-all focus:border-q2 focus:border-2 focus:outline-none text-q7"
+            @blur="validateConfirmPassword"
           />
+          <div v-if="confirmPasswordError" class="text-error mt-2 text-sm">
+            {{ confirmPasswordError }}
+          </div>
         </div>
 
-        <div v-if="errorMessage" class="p-x-5 text-red-700 font-medium flex justify-center">{{ errorMessage }}</div>
+        <div v-if="errorMessage" class="p-x-5 text-error flex justify-center font-medium">
+          {{ errorMessage }}
+        </div>
 
-        <div class="py-2 px-5 flex justify-center">
-          <button
-            type="submit"
-            class="bg-q1 hover:bg-q2 w-full p-2 border-2 border-q5 hover:border-q6 text-lg text-q7 font-bold rounded-2xl transition-all ease-in-out duration-300"
-          >
-            {{ mode === 'login' ? 'Войти' : 'Зарегистрироваться' }}
-          </button>
+        <div class="flex justify-center px-5 py-2">
+          <Button type="submit" :state="state" :state_list="state_list"></Button>
         </div>
       </form>
     </div>
@@ -66,44 +67,102 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useAccountsStore } from '@/stores/accounts'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import { useAccountsStore } from '@/stores/accounts';
+import { useRouter } from 'vue-router';
+import { validateLogin, validatePassword } from '@/utils/validation';
+import Button from '@/components/forms/SmartButton.vue';
+import Input from '@/components/forms/SmartInput.vue';
+import Tabs from '@/components/forms/Tabs.vue';
 
-const authStore = useAuthStore()
-const accountsStore = useAccountsStore()
-const router = useRouter()
+const authStore = useAuthStore();
+const accountsStore = useAccountsStore();
+const router = useRouter();
 
-const mode = ref('login')
-const username = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const errorMessage = ref('')
+const state = ref('login');
+const username = ref('');
+const password = ref('');
+const confirmPassword = ref('');
+const errorMessage = ref('');
+
+// Ошибки валидации
+const usernameErrors = ref([]);
+const passwordErrors = ref([]);
+const confirmPasswordError = ref('');
+
+const state_list = ref({ login: 'Войти', register: 'Зарегистрироваться' });
+const tabs = [
+  { value: 'login', label: 'Вход' },
+  { value: 'register', label: 'Регистрация' },
+];
+
+// Валидация имени пользователя
+const validateUsernameField = () => {
+  const result = validateLogin(username.value);
+  usernameErrors.value = result.errors;
+  return result.isValid;
+};
+
+// Валидация пароля
+const validatePasswordField = () => {
+  const result = validatePassword(password.value);
+  passwordErrors.value = result.errors;
+  return result.isValid;
+};
+
+// Валидация подтверждения пароля
+const validateConfirmPassword = () => {
+  if (state.value !== 'register') return true;
+  if (password.value !== confirmPassword.value) {
+    confirmPasswordError.value = 'Пароли не совпадают';
+    return false;
+  } else {
+    confirmPasswordError.value = '';
+    return true;
+  }
+};
+
+// Общая валидация формы регистрации
+const validateRegistrationForm = () => {
+  let isValid = true;
+  const isUsernameValid = validateUsernameField();
+  const isPasswordValid = validatePasswordField();
+  const isConfirmValid = validateConfirmPassword();
+  if (!isUsernameValid) isValid = false;
+  if (!isPasswordValid) isValid = false;
+  if (!isConfirmValid) isValid = false;
+  return isValid;
+};
 
 const handleSubmit = () => {
-  errorMessage.value = ''
+  errorMessage.value = '';
 
-  if (mode.value === 'login') {
-    const account = accountsStore.findAccount(username.value, password.value)
+  if (state.value === 'login') {
+    const account = accountsStore.findAccount(username.value, password.value);
     if (account) {
-      authStore.login(username.value)
-      router.push('/main')
+      authStore.login(username.value);
+      router.push('/main');
     } else {
-      errorMessage.value = 'Неверное имя пользователя или пароль'
+      errorMessage.value = 'Неверное имя пользователя или пароль';
     }
   } else {
-    if (password.value !== confirmPassword.value) {
-      errorMessage.value = 'Пароли не совпадают'
-      return
+    // Сначала валидируем форму регистрации
+    if (!validateRegistrationForm()) {
+      return; // Если ошибки есть, не отправляем
     }
+
     if (accountsStore.usernameExists(username.value)) {
-      errorMessage.value = 'Пользователь с таким именем уже существует'
-      return
+      errorMessage.value = 'Пользователь с таким именем уже существует';
+      return;
     }
-    accountsStore.addAccount({ username: username.value, password: password.value })
-    authStore.login(username.value)
-    router.push('/main')
+
+    accountsStore.addAccount({
+      username: username.value,
+      password: password.value,
+    });
+    authStore.login(username.value);
+    router.push('/main');
   }
-}
+};
 </script>

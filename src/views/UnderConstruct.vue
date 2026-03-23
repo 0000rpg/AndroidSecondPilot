@@ -18,6 +18,7 @@
             v-model="username"
             type="text"
             required
+            :mode="inputModes.login"
             @blur="validateUsernameField"
             @input="usernameErrors = []"
           />
@@ -33,6 +34,7 @@
             v-model="password"
             type="password"
             required
+            :mode="inputModes.password"
             @blur="validatePasswordField"
           />
           <div v-if="passwordErrors.length" class="text-error mt-2 space-y-1 text-sm">
@@ -47,6 +49,7 @@
             v-model="confirmPassword"
             type="password"
             required
+            :mode="inputModes.confirmPassword"
             @blur="validateConfirmPassword"
           />
           <div v-if="confirmPasswordError" class="text-error mt-2 text-sm">
@@ -62,6 +65,12 @@
           <Button type="submit" :state="state" :state_list="state_list"></Button>
         </div>
       </form>
+    </div>
+    <div
+      class="bg-main border-border text-text max-h-md m-5 block flex h-full w-full max-w-md flex-col items-center rounded-2xl border-5 font-medium transition-all duration-300 ease-in-out"
+    >
+      <RouterLink class="hover:text-text-a" :to="{ name: 'dev' }">DEV</RouterLink>
+      <RouterLink class="hover:text-text-a" :to="{ name: 'building' }">BUILDING</RouterLink>
     </div>
   </div>
 </template>
@@ -91,16 +100,19 @@ const usernameErrors = ref([]);
 const passwordErrors = ref([]);
 const confirmPasswordError = ref('');
 
+// Настройки конструктора формы
 const state_list = ref({ login: 'Войти', register: 'Зарегистрироваться' });
 const tabs = [
   { value: 'login', label: 'Вход' },
   { value: 'register', label: 'Регистрация' },
 ];
+const inputModes = ref({ login: '', password: '', confirmPassword: '' });
 
 // Валидация имени пользователя
 const validateUsernameField = () => {
   const result = validateLogin(username.value);
   usernameErrors.value = result.errors;
+  inputModes.value.login = result.isValid ? 'correct' : 'error';
   return result.isValid;
 };
 
@@ -108,17 +120,21 @@ const validateUsernameField = () => {
 const validatePasswordField = () => {
   const result = validatePassword(password.value);
   passwordErrors.value = result.errors;
+  inputModes.value.password = result.isValid ? 'correct' : 'error';
   return result.isValid;
 };
 
 // Валидация подтверждения пароля
 const validateConfirmPassword = () => {
+  inputModes.value.confirmPassword = '';
   if (state.value !== 'register') return true;
   if (password.value !== confirmPassword.value) {
     confirmPasswordError.value = 'Пароли не совпадают';
+    inputModes.value.confirmPassword = 'error';
     return false;
   } else {
     confirmPasswordError.value = '';
+    inputModes.value.confirmPassword = 'correct';
     return true;
   }
 };

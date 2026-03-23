@@ -19,6 +19,9 @@
   --color-correct-a: rgba(67, 235, 17, 1);
   --color-error: rgba(193, 0, 7, 1);
   --color-error-a: rgba(153, 0, 7, 1);
+
+  --color-correct-tb: rgba(67, 195, 17, 0.4);
+  --color-error-tb: rgba(193, 0, 7, 0.6);
 }
 
 @utility bg-stripes-diagonal-transparent {
@@ -36,8 +39,8 @@
     45deg,
     transparent 0px,
     transparent 8px,
-    var(--color-error-a) 8px,
-    var(--color-error-a) 10px
+    var(--color-error-tb) 8px,
+    var(--color-error-tb) 10px
   );
 }
 
@@ -46,10 +49,69 @@
     45deg,
     transparent 0px,
     transparent 8px,
-    var(--color-correct) 8px,
-    var(--color-correct) 10px
+    var(--color-correct-tb) 8px,
+    var(--color-correct-tb) 10px
   );
 }
+
+/* ==================== Buttons ==================== */
+@layer components {
+  /* Общие стили для всех кнопок */
+  .button-default,
+  .button-block,
+  .button-correct,
+  .button-error {
+    border: 2px solid var(--color-border);
+    color: var(--color-text);
+    width: 100%;
+    border-radius: 1rem;
+    padding: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    transition-property: all;
+    transition-duration: 300ms;
+    transition-timing-function: ease-in-out;
+    text-align: center;
+  }
+
+  /* Общий ховер для границы */
+  .button-default:hover,
+  .button-block:hover,
+  .button-correct:hover,
+  .button-error:hover {
+    border-color: var(--color-border-a);
+  }
+
+  /* Фоны для каждого режима */
+  .button-default {
+    background-color: var(--color-theme);
+  }
+  .button-default:hover {
+    background-color: var(--color-theme-a);
+  }
+
+  .button-block {
+    background-color: var(--color-main-tb);
+  }
+  .button-block:hover {
+    background-color: var(--color-main-tb-a);
+  }
+
+  .button-correct {
+    background-color: var(--color-correct);
+  }
+  .button-correct:hover {
+    background-color: var(--color-correct-a);
+  }
+
+  .button-error {
+    background-color: var(--color-error);
+  }
+  .button-error:hover {
+    background-color: var(--color-error-a);
+  }
+}
+/* ==================== Buttons ==================== */
 
 @layer base {
   h2 {

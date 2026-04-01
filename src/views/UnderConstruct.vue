@@ -5,180 +5,179 @@
     <div
       class="bg-main border-border max-h-md m-5 flex h-full w-full max-w-md flex-col items-center rounded-2xl border-5 transition-all duration-300 ease-in-out"
     >
-      <h2>
-        {{ state === 'login' ? 'Вход' : 'Регистрация' }}
-      </h2>
-      <Tabs v-model="state" :items="tabs" />
+      <div class="flex w-full flex-row px-2 pb-2">
+        <h2 class="text-2xl font-bold">Добро пожаловать, {{ authStore.user }}!</h2>
+      </div>
 
-      <form @submit.prevent="handleSubmit" class="w-full space-y-5">
-        <div class="p-5">
-          <label class="text-text block font-medium">Имя пользователя</label>
-          <Input
-            id="username"
-            v-model="username"
-            type="text"
-            required
-            :mode="inputModes.login"
-            @blur="validateUsernameField"
-            @input="usernameErrors = []"
-          />
-          <div v-if="usernameErrors.length" class="text-error mt-2 space-y-1 text-sm">
-            <p v-for="(err, idx) in usernameErrors" :key="idx">{{ err }}</p>
+      <!-- Grid табличка -->
+      <div class="w-full space-y-5">
+        <div class="grid grid-cols-2 items-center gap-4 p-2">
+          <button @click="openAddModal" class="button-correct">Добавить аккаунт</button>
+          <button @click="logout" class="button-default">Выйти</button>
+        </div>
+        <div class="text-text min-w-full overflow-x-auto p-4">
+          <!-- Заголовок (grid) -->
+          <div
+            class="border-border text-text mb-2 grid grid-cols-7 items-center gap-4 border-b-2 text-base font-medium uppercase"
+          >
+            <div class="col-span-3 text-left">Имя пользователя</div>
+            <div class="col-span-2 text-left">Пароль</div>
+            <div class="col-span-2 text-center">Действия</div>
+          </div>
+
+          <!-- Строки данных -->
+          <div v-for="account in accountsStore.accounts" :key="account.id">
+            <div class="border-border mb-1 grid grid-cols-7 items-center gap-4 border-b text-base">
+              <div class="col-span-3 text-left">{{ account.username }}</div>
+              <div class="col-span-2 text-left">{{ account.password }}</div>
+              <div class="col-span-2 text-center">
+                <button
+                  @click="openEditModal(account)"
+                  class="button-default mb-1 w-full py-1 text-base"
+                >
+                  Edit
+                </button>
+                <button
+                  @click="deleteAccount(account.id, account.username)"
+                  class="button-error mb-1 w-full py-1 text-base"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-
-        <div class="p-5">
-          <label class="text-text block font-medium">Пароль</label>
-          <Input
-            id="password"
-            v-model="password"
-            type="password"
-            required
-            :mode="inputModes.password"
-            @blur="validatePasswordField"
-          />
-          <div v-if="passwordErrors.length" class="text-error mt-2 space-y-1 text-sm">
-            <p v-for="(err, idx) in passwordErrors" :key="idx">{{ err }}</p>
-          </div>
-        </div>
-
-        <div v-if="state === 'register'" class="p-5">
-          <label class="text-text block font-medium">Подтверждение пароля</label>
-          <Input
-            id="confirmPassword"
-            v-model="confirmPassword"
-            type="password"
-            required
-            :mode="inputModes.confirmPassword"
-            @blur="validateConfirmPassword"
-          />
-          <div v-if="confirmPasswordError" class="text-error mt-2 text-sm">
-            {{ confirmPasswordError }}
-          </div>
-        </div>
-
-        <div v-if="errorMessage" class="p-x-5 text-error flex justify-center font-medium">
-          {{ errorMessage }}
-        </div>
-
-        <div class="flex justify-center px-5 py-2">
-          <Button type="submit" :state="state" :state_list="state_list"></Button>
-        </div>
-      </form>
+      </div>
     </div>
+
+    <!-- Modal for Add/Edit -->
     <div
-      class="bg-main border-border text-text max-h-md m-5 block flex h-full w-full max-w-md flex-col items-center rounded-2xl border-5 font-medium transition-all duration-300 ease-in-out"
+      v-if="showModal"
+      class="bg-opacity-75 fixed inset-0 flex items-center justify-center bg-gray-500"
     >
-      <RouterLink class="hover:text-text-a" :to="{ name: 'dev' }">DEV</RouterLink>
-      <RouterLink class="hover:text-text-a" :to="{ name: 'building' }">BUILDING</RouterLink>
+      <div class="w-full max-w-md rounded-lg bg-white p-6">
+        <h3 class="mb-4 text-xl font-bold">
+          {{ modalMode === 'add' ? 'Добавить аккаунт' : 'Редактировать аккаунт' }}
+        </h3>
+        <form @submit.prevent="saveAccount">
+          <div class="mb-4">
+            <label class="mb-2 block text-sm font-bold text-gray-700" for="modal-username"
+              >Имя пользователя</label
+            >
+            <input
+              id="modal-username"
+              v-model="editForm.username"
+              type="text"
+              required
+              class="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
+            />
+          </div>
+          <div class="mb-4">
+            <label class="mb-2 block text-sm font-bold text-gray-700" for="modal-password"
+              >Пароль</label
+            >
+            <input
+              id="modal-password"
+              v-model="editForm.password"
+              type="password"
+              required
+              class="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
+            />
+          </div>
+          <div v-if="modalError" class="mb-4 text-sm text-red-500">{{ modalError }}</div>
+          <div class="flex justify-end">
+            <button
+              type="button"
+              @click="closeModal"
+              class="mr-2 rounded bg-gray-300 px-4 py-2 font-bold text-gray-800 hover:bg-gray-400"
+            >
+              Отмена
+            </button>
+            <button
+              type="submit"
+              class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+            >
+              Сохранить
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, reactive } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useAccountsStore } from '@/stores/accounts';
 import { useRouter } from 'vue-router';
-import { validateLogin, validatePassword } from '@/utils/validation';
 import Button from '@/components/forms/SmartButton.vue';
-import Input from '@/components/forms/SmartInput.vue';
-import Tabs from '@/components/forms/Tabs.vue';
 
 const authStore = useAuthStore();
 const accountsStore = useAccountsStore();
 const router = useRouter();
 
-const state = ref('login');
-const username = ref('');
-const password = ref('');
-const confirmPassword = ref('');
-const errorMessage = ref('');
+const showModal = ref(false);
+const modalMode = ref('add');
+const editForm = reactive({ id: null, username: '', password: '' });
+const modalError = ref('');
 
-// Ошибки валидации
-const usernameErrors = ref([]);
-const passwordErrors = ref([]);
-const confirmPasswordError = ref('');
-
-// Настройки конструктора формы
-const state_list = ref({ login: 'Войти', register: 'Зарегистрироваться' });
-const tabs = [
-  { value: 'login', label: 'Вход' },
-  { value: 'register', label: 'Регистрация' },
-];
-const inputModes = ref({ login: '', password: '', confirmPassword: '' });
-
-// Валидация имени пользователя
-const validateUsernameField = () => {
-  const result = validateLogin(username.value);
-  usernameErrors.value = result.errors;
-  inputModes.value.login = result.isValid ? 'correct' : 'error';
-  return result.isValid;
+const openAddModal = () => {
+  modalMode.value = 'add';
+  editForm.id = null;
+  editForm.username = '';
+  editForm.password = '';
+  modalError.value = '';
+  showModal.value = true;
 };
 
-// Валидация пароля
-const validatePasswordField = () => {
-  const result = validatePassword(password.value);
-  passwordErrors.value = result.errors;
-  inputModes.value.password = result.isValid ? 'correct' : 'error';
-  return result.isValid;
+const openEditModal = (account) => {
+  modalMode.value = 'edit';
+  editForm.id = account.id;
+  editForm.username = account.username;
+  editForm.password = account.password;
+  modalError.value = '';
+  showModal.value = true;
 };
 
-// Валидация подтверждения пароля
-const validateConfirmPassword = () => {
-  inputModes.value.confirmPassword = '';
-  if (state.value !== 'register') return true;
-  if (password.value !== confirmPassword.value) {
-    confirmPasswordError.value = 'Пароли не совпадают';
-    inputModes.value.confirmPassword = 'error';
-    return false;
-  } else {
-    confirmPasswordError.value = '';
-    inputModes.value.confirmPassword = 'correct';
-    return true;
+const closeModal = () => {
+  showModal.value = false;
+};
+
+const saveAccount = () => {
+  modalError.value = '';
+  const existing = accountsStore.accounts.find((acc) => acc.username === editForm.username);
+  if (existing && (modalMode.value === 'add' || existing.id !== editForm.id)) {
+    modalError.value = 'Пользователь с таким именем уже существует';
+    return;
   }
-};
 
-// Общая валидация формы регистрации
-const validateRegistrationForm = () => {
-  let isValid = true;
-  const isUsernameValid = validateUsernameField();
-  const isPasswordValid = validatePasswordField();
-  const isConfirmValid = validateConfirmPassword();
-  if (!isUsernameValid) isValid = false;
-  if (!isPasswordValid) isValid = false;
-  if (!isConfirmValid) isValid = false;
-  return isValid;
-};
-
-const handleSubmit = () => {
-  errorMessage.value = '';
-
-  if (state.value === 'login') {
-    const account = accountsStore.findAccount(username.value, password.value);
-    if (account) {
-      authStore.login(username.value);
-      router.push('/main');
-    } else {
-      errorMessage.value = 'Неверное имя пользователя или пароль';
-    }
+  if (modalMode.value === 'add') {
+    accountsStore.addAccount({ username: editForm.username, password: editForm.password });
   } else {
-    // Сначала валидируем форму регистрации
-    if (!validateRegistrationForm()) {
-      return; // Если ошибки есть, не отправляем
-    }
-
-    if (accountsStore.usernameExists(username.value)) {
-      errorMessage.value = 'Пользователь с таким именем уже существует';
-      return;
-    }
-
-    accountsStore.addAccount({
-      username: username.value,
-      password: password.value,
+    accountsStore.updateAccount(editForm.id, {
+      username: editForm.username,
+      password: editForm.password,
     });
-    authStore.login(username.value);
-    router.push('/main');
+    if (authStore.user === accountsStore.accounts.find((a) => a.id === editForm.id)?.username) {
+      authStore.user = editForm.username;
+    }
   }
+  closeModal();
+};
+
+const deleteAccount = (id, username) => {
+  if (confirm(`Вы уверены, что хотите удалить аккаунт ${username}?`)) {
+    accountsStore.deleteAccount(id);
+    if (authStore.user === username) {
+      authStore.logout();
+      router.push('/');
+    }
+  }
+};
+
+const logout = () => {
+  authStore.logout();
+  router.push('/');
 };
 </script>

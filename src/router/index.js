@@ -1,7 +1,7 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
-import LoginView from '@/views/LoginView.vue'
-import MainView from '@/views/MainView.vue'
-import { useAuthStore } from '@/stores/auth'
+import { createRouter, createWebHashHistory } from 'vue-router';
+import LoginView from '@/views/LoginView.vue';
+import MainView from '@/views/MainView.vue';
+import { useAuthStore } from '@/stores/auth';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -9,37 +9,36 @@ const router = createRouter({
     {
       path: '/',
       name: 'login',
-      component: LoginView
+      component: LoginView,
     },
     {
       path: '/main',
       name: 'main',
       component: MainView,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/dev',
       name: 'dev',
       component: () => import('@/views/DevPlayground.vue'),
-      mets: { requiresAuth: false }
+      meta: { requiresAuth: false },
     },
     {
       path: '/underConstruct',
       name: 'building',
       component: () => import('@/views/UnderConstruct.vue'),
-      mets: { requiresAuth: false }
-    }
+      meta: { requiresAuth: false },
+    },
   ],
-})
-
+});
 
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/')
+    next('/');
   } else {
-    next()
+    next();
   }
-})
+});
 
-export default router
+export default router;

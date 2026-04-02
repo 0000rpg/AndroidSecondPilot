@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import LoginView from '@/views/LoginView.vue';
 import MainView from '@/views/MainView.vue';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/users/auth';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -29,12 +29,20 @@ const router = createRouter({
       component: () => import('@/views/UnderConstruct.vue'),
       meta: { requiresAuth: false },
     },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('@/views/AdminPanel.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 });
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (authStore.isAuthenticated && to.path === '/') {
+    next('/main');
+  } else if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/');
   } else {
     next();

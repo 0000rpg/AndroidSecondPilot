@@ -2,9 +2,7 @@
   <div
     class="bg-background flex min-h-screen flex-col items-center justify-center p-1 transition-all duration-300 ease-in-out"
   >
-    <div
-      class="bg-main border-border max-h-md m-5 flex h-full w-full max-w-md flex-col items-center rounded-2xl border-5 transition-all duration-300 ease-in-out"
-    >
+    <div class="card-base">
       <h2>
         {{ state === 'login' ? 'Вход' : 'Регистрация' }}
       </h2>
@@ -66,119 +64,34 @@
         </div>
       </form>
     </div>
-    <div
-      class="bg-main border-border text-text max-h-md m-5 block flex h-full w-full max-w-md flex-col items-center rounded-2xl border-5 px-5 py-2 font-medium transition-all duration-300 ease-in-out"
-    >
-      <RouterLink class="button-default mb-2" :to="{ name: 'dev' }">DEV</RouterLink>
-      <RouterLink class="button-default" :to="{ name: 'building' }">BUILDING</RouterLink>
+    <div class="card-base p-5" v-if="false">
+      <RouterLink class="btn-default mb-2" :to="{ name: 'dev' }">DEV</RouterLink>
+      <RouterLink class="btn-default" :to="{ name: 'building' }">BUILDING</RouterLink>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import { useAccountsStore } from '@/stores/accounts';
-import { useRouter } from 'vue-router';
-import { validateLogin, validatePassword } from '@/utils/validation';
+import { useAuthForm } from '@/composables/useAuthForm';
 import Button from '@/components/forms/SmartButton.vue';
 import Input from '@/components/forms/SmartInput.vue';
 import Tabs from '@/components/forms/Tabs.vue';
 
-const authStore = useAuthStore();
-const accountsStore = useAccountsStore();
-const router = useRouter();
-
-const state = ref('login');
-const username = ref('');
-const password = ref('');
-const confirmPassword = ref('');
-const errorMessage = ref('');
-
-// Ошибки валидации
-const usernameErrors = ref([]);
-const passwordErrors = ref([]);
-const confirmPasswordError = ref('');
-
-// Настройки конструктора формы
-const state_list = ref({ login: 'Войти', register: 'Зарегистрироваться' });
-const tabs = [
-  { value: 'login', label: 'Вход' },
-  { value: 'register', label: 'Регистрация' },
-];
-const inputModes = ref({ login: '', password: '', confirmPassword: '' });
-
-// Валидация имени пользователя
-const validateUsernameField = () => {
-  const result = validateLogin(username.value);
-  usernameErrors.value = result.errors;
-  inputModes.value.login = result.isValid ? 'correct' : 'error';
-  return result.isValid;
-};
-
-// Валидация пароля
-const validatePasswordField = () => {
-  const result = validatePassword(password.value);
-  passwordErrors.value = result.errors;
-  inputModes.value.password = result.isValid ? 'correct' : 'error';
-  return result.isValid;
-};
-
-// Валидация подтверждения пароля
-const validateConfirmPassword = () => {
-  inputModes.value.confirmPassword = '';
-  if (state.value !== 'register') return true;
-  if (password.value !== confirmPassword.value) {
-    confirmPasswordError.value = 'Пароли не совпадают';
-    inputModes.value.confirmPassword = 'error';
-    return false;
-  } else {
-    confirmPasswordError.value = '';
-    inputModes.value.confirmPassword = 'correct';
-    return true;
-  }
-};
-
-// Общая валидация формы регистрации
-const validateRegistrationForm = () => {
-  let isValid = true;
-  const isUsernameValid = validateUsernameField();
-  const isPasswordValid = validatePasswordField();
-  const isConfirmValid = validateConfirmPassword();
-  if (!isUsernameValid) isValid = false;
-  if (!isPasswordValid) isValid = false;
-  if (!isConfirmValid) isValid = false;
-  return isValid;
-};
-
-const handleSubmit = () => {
-  errorMessage.value = '';
-
-  if (state.value === 'login') {
-    const account = accountsStore.findAccount(username.value, password.value);
-    if (account) {
-      authStore.login(username.value);
-      router.push('/main');
-    } else {
-      errorMessage.value = 'Неверное имя пользователя или пароль';
-    }
-  } else {
-    // Сначала валидируем форму регистрации
-    if (!validateRegistrationForm()) {
-      return; // Если ошибки есть, не отправляем
-    }
-
-    if (accountsStore.usernameExists(username.value)) {
-      errorMessage.value = 'Пользователь с таким именем уже существует';
-      return;
-    }
-
-    accountsStore.addAccount({
-      username: username.value,
-      password: password.value,
-    });
-    authStore.login(username.value);
-    router.push('/main');
-  }
-};
+const {
+  state,
+  username,
+  password,
+  confirmPassword,
+  errorMessage,
+  usernameErrors,
+  passwordErrors,
+  confirmPasswordError,
+  inputModes,
+  tabs,
+  state_list,
+  handleSubmit,
+  validateUsernameField,
+  validatePasswordField,
+  validateConfirmPassword,
+} = useAuthForm();
 </script>

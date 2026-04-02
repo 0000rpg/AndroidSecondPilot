@@ -56,59 +56,26 @@
 
 /* ==================== Buttons ==================== */
 @layer components {
-  /* Общие стили для всех кнопок */
-  .button-default,
-  .button-block,
-  .button-correct,
-  .button-error {
-    border: 2px solid var(--color-border);
-    color: var(--color-text);
-    width: 100%;
-    border-radius: 1rem;
-    padding: 0.5rem;
-    font-size: 1.125rem;
-    font-weight: 700;
-    transition-property: all;
-    transition-duration: 300ms;
-    transition-timing-function: ease-in-out;
-    text-align: center;
+  /* Базовые стили */
+  .btn {
+    @apply border-border text-text hover:border-border-a h-full w-full rounded-2xl border-2 p-2 text-center text-lg font-bold transition-all duration-300 ease-in-out;
   }
 
-  /* Общий ховер для границы */
-  .button-default:hover,
-  .button-block:hover,
-  .button-correct:hover,
-  .button-error:hover {
-    border-color: var(--color-border-a);
+  /* Варианты кнопок */
+  .btn-default {
+    @apply bg-theme hover:bg-theme-a border-border text-text hover:border-border-a h-full w-full rounded-2xl border-2 p-2 text-center text-lg font-bold transition-all duration-300 ease-in-out;
   }
 
-  /* Фоны для каждого режима */
-  .button-default {
-    background-color: var(--color-theme);
-  }
-  .button-default:hover {
-    background-color: var(--color-theme-a);
+  .btn-block {
+    @apply bg-main-tb hover:bg-main-tb-a border-border text-text hover:border-border-a h-full w-full rounded-2xl border-2 p-2 text-center text-lg font-bold transition-all duration-300 ease-in-out;
   }
 
-  .button-block {
-    background-color: var(--color-main-tb);
-  }
-  .button-block:hover {
-    background-color: var(--color-main-tb-a);
+  .btn-correct {
+    @apply bg-correct hover:bg-correct-a border-border text-text hover:border-border-a h-full w-full rounded-2xl border-2 p-2 text-center text-lg font-bold transition-all duration-300 ease-in-out;
   }
 
-  .button-correct {
-    background-color: var(--color-correct);
-  }
-  .button-correct:hover {
-    background-color: var(--color-correct-a);
-  }
-
-  .button-error {
-    background-color: var(--color-error);
-  }
-  .button-error:hover {
-    background-color: var(--color-error-a);
+  .btn-error {
+    @apply bg-error hover:bg-error-a border-border text-text hover:border-border-a h-full w-full rounded-2xl border-2 p-2 text-center text-lg font-bold transition-all duration-300 ease-in-out;
   }
 }
 /* ==================== Buttons ==================== */
@@ -122,6 +89,12 @@
   }
   label {
     @apply text-text block font-medium;
+  }
+}
+
+@layer components {
+  .card-base {
+    @apply bg-main border-border m-5 flex h-full w-full max-w-lg flex-col items-center rounded-2xl border-5 transition-all duration-300 ease-in-out;
   }
 }
 

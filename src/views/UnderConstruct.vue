@@ -5,9 +5,7 @@
     <div
       class="bg-main border-border max-h-md m-5 flex h-full w-full max-w-md flex-col items-center rounded-2xl border-5 transition-all duration-300 ease-in-out"
     >
-      <div class="flex w-full flex-row px-2 pb-2">
-        <h2 class="text-2xl font-bold">Добро пожаловать, {{ authStore.user }}!</h2>
-      </div>
+      <h2 class="text-2xl font-bold">Добро пожаловать, {{ authStore.user }}!</h2>
 
       <!-- Grid табличка -->
       <div class="w-full space-y-5">

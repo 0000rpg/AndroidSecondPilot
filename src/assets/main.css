@@ -120,6 +120,9 @@
   h3 {
     @apply text-text border-border m-3 w-full border-b-2 pb-3 text-left text-2xl font-bold;
   }
+  label {
+    @apply text-text block font-medium;
+  }
 }
 
 input:-webkit-autofill,
@@ -131,3 +134,15 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: var(--color-text) !important;
   transition: background-color 5000s ease-in-out 0s; /* для Firefox */
 }
+
+/* ==================== Modal page ==================== */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+/* ==================== Modal page ==================== */

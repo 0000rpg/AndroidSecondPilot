@@ -12,7 +12,7 @@
 
       <form @submit.prevent="handleSubmit" class="w-full space-y-5">
         <div class="p-5">
-          <label class="text-text block font-medium">Имя пользователя</label>
+          <label>Имя пользователя</label>
           <Input
             id="username"
             v-model="username"
@@ -28,7 +28,7 @@
         </div>
 
         <div class="p-5">
-          <label class="text-text block font-medium">Пароль</label>
+          <label>Пароль</label>
           <Input
             id="password"
             v-model="password"
@@ -43,7 +43,7 @@
         </div>
 
         <div v-if="state === 'register'" class="p-5">
-          <label class="text-text block font-medium">Подтверждение пароля</label>
+          <label>Подтверждение пароля</label>
           <Input
             id="confirmPassword"
             v-model="confirmPassword"

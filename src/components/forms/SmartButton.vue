@@ -24,7 +24,7 @@ const props = defineProps({
   },
   state_list: {
     type: Object,
-    required: true,
+    required: false,
   },
   disabled: {
     type: Boolean,
@@ -72,7 +72,7 @@ const buttonClasses = computed(() => {
   return classes;
 });
 
-const buttonText = computed(() => props.state_list[props.state] || '^_+');
+const buttonText = computed(() => (props.state_list ? props.state_list[props.state] : props.state));
 
 const handleClick = (event) => {
   if (props.disabled) return;

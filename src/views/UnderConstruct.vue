@@ -49,58 +49,49 @@
     </div>
 
     <!-- Modal for Add/Edit -->
-    <div
-      v-if="showModal"
-      class="bg-opacity-75 fixed inset-0 flex items-center justify-center bg-gray-500"
-    >
-      <div class="w-full max-w-md rounded-lg bg-white p-6">
-        <h3 class="mb-4 text-xl font-bold">
-          {{ modalMode === 'add' ? 'Добавить аккаунт' : 'Редактировать аккаунт' }}
-        </h3>
-        <form @submit.prevent="saveAccount">
-          <div class="mb-4">
-            <label class="mb-2 block text-sm font-bold text-gray-700" for="modal-username"
-              >Имя пользователя</label
-            >
-            <input
-              id="modal-username"
-              v-model="editForm.username"
-              type="text"
-              required
-              class="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
-            />
-          </div>
-          <div class="mb-4">
-            <label class="mb-2 block text-sm font-bold text-gray-700" for="modal-password"
-              >Пароль</label
-            >
-            <input
-              id="modal-password"
-              v-model="editForm.password"
-              type="password"
-              required
-              class="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
-            />
-          </div>
-          <div v-if="modalError" class="mb-4 text-sm text-red-500">{{ modalError }}</div>
-          <div class="flex justify-end">
-            <button
-              type="button"
-              @click="closeModal"
-              class="mr-2 rounded bg-gray-300 px-4 py-2 font-bold text-gray-800 hover:bg-gray-400"
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-            >
-              Сохранить
-            </button>
-          </div>
-        </form>
+    <transition name="modal-fade">
+      <div
+        v-if="showModal"
+        class="bg-glass fixed inset-0 flex flex-col items-center justify-center p-1 transition-all duration-300 ease-in-out"
+      >
+        <div 
+          class="bg-main border-border max-h-md m-5 flex h-fit w-full max-w-md flex-col items-center rounded-2xl border-5 transition-all duration-300 ease-in-out"
+        >
+          <h2>
+            {{ modalMode === 'add' ? 'Добавить аккаунт' : 'Редактировать аккаунт' }}
+          </h2>
+          <form @submit.prevent="saveAccount" class="w-full space-y-5">
+            <div class="p-5">
+              <label for="modal-username"
+                >Имя пользователя</label
+              >
+              <Input 
+                id="modal-username"
+                v-model="editForm.username"
+                type="text"
+                required
+              />
+            </div>
+            <div class="p-5">
+              <label for="modal-password"
+                >Пароль</label
+              >
+              <Input 
+                id="modal-password"
+                v-model="editForm.password"
+                type="password"
+                required
+              />
+            </div>
+            <div v-if="modalError" class="p-x-5 text-error flex justify-center font-medium">{{ modalError }}</div>
+            <div class="grid grid-cols-2 gap-2 px-5 py-2">
+              <Button type="button" state="Отмена" mode="block" @click="closeModal"></Button>
+              <Button type="submit" state="Сохранить" @click="closeModal"></Button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -110,6 +101,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useAccountsStore } from '@/stores/accounts';
 import { useRouter } from 'vue-router';
 import Button from '@/components/forms/SmartButton.vue';
+import Input from '@/components/forms/SmartInput.vue';
 
 const authStore = useAuthStore();
 const accountsStore = useAccountsStore();

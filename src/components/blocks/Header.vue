@@ -109,6 +109,8 @@ const authStore = useAuthStore();
 // Определение пунктов меню с путями
 const navItems = [
   { id: 'home', label: 'Главная', path: '/' },
+  { id: 'chat', label: 'Чат', path: '/chat' },
+  { id: 'settings', label: 'Настройки', path: '/settings' },
   { id: 'admin', label: 'Админ панель', path: '/admin' },
   { id: 'dev', label: 'Палитра', path: '/dev' },
   { id: 'building', label: 'Песочница', path: '/underConstruct' },

@@ -119,3 +119,30 @@ input:-webkit-autofill:active {
   opacity: 0;
 }
 /* ==================== Modal page ==================== */
+
+@layer utilities {
+  /* Для Webkit браузеров (Chrome, Safari, Edge) */
+  .custom-scrollbar {
+    scrollbar-width: thin; /* Для Firefox - узкий */
+    scrollbar-color: var(--color-theme) transparent; /* Для Firefox */
+  }
+
+  /* Для Webkit */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(237, 108, 33, 1);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(237, 108, 33, 0.8);
+  }
+}

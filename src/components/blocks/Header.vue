@@ -9,7 +9,7 @@
           <img
             src="/src/assets/images/logo/logo500.png"
             alt="Logo"
-            class="h-full w-full object-cover"
+            class="h-full w-full object-cover brightness-0 invert"
           />
         </div>
       </RouterLink>

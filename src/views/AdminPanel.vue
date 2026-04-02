@@ -82,78 +82,22 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { useAuthStore } from '@/stores/users/auth';
-import { useAccountsStore } from '@/stores/users/accounts';
-import { useRouter } from 'vue-router';
+import { useAdminPanel } from '@/composables/useAdminPanel';
 import Button from '@/components/forms/SmartButton.vue';
 import Input from '@/components/forms/SmartInput.vue';
 
-const authStore = useAuthStore();
-const accountsStore = useAccountsStore();
-const router = useRouter();
-
-const showModal = ref(false);
-const modalMode = ref('add');
-const editForm = reactive({ id: null, username: '', password: '' });
-const modalError = ref('');
-
-const openAddModal = () => {
-  modalMode.value = 'add';
-  editForm.id = null;
-  editForm.username = '';
-  editForm.password = '';
-  modalError.value = '';
-  showModal.value = true;
-};
-
-const openEditModal = (account) => {
-  modalMode.value = 'edit';
-  editForm.id = account.id;
-  editForm.username = account.username;
-  editForm.password = account.password;
-  modalError.value = '';
-  showModal.value = true;
-};
-
-const closeModal = () => {
-  showModal.value = false;
-};
-
-const saveAccount = () => {
-  modalError.value = '';
-  const existing = accountsStore.accounts.find((acc) => acc.username === editForm.username);
-  if (existing && (modalMode.value === 'add' || existing.id !== editForm.id)) {
-    modalError.value = 'Пользователь с таким именем уже существует';
-    return;
-  }
-
-  if (modalMode.value === 'add') {
-    accountsStore.addAccount({ username: editForm.username, password: editForm.password });
-  } else {
-    accountsStore.updateAccount(editForm.id, {
-      username: editForm.username,
-      password: editForm.password,
-    });
-    if (authStore.user === accountsStore.accounts.find((a) => a.id === editForm.id)?.username) {
-      authStore.user = editForm.username;
-    }
-  }
-  closeModal();
-};
-
-const deleteAccount = (id, username) => {
-  if (confirm(`Вы уверены, что хотите удалить аккаунт ${username}?`)) {
-    accountsStore.deleteAccount(id);
-    if (authStore.user === username) {
-      authStore.logout();
-      router.push('/');
-    }
-  }
-};
-
-const logout = () => {
-  authStore.logout();
-  router.push('/');
-};
+const {
+  authStore,
+  accountsStore,
+  showModal,
+  modalMode,
+  editForm,
+  modalError,
+  openAddModal,
+  openEditModal,
+  closeModal,
+  saveAccount,
+  deleteAccount,
+  logout,
+} = useAdminPanel();
 </script>

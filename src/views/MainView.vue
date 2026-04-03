@@ -1,159 +1,174 @@
 <template>
   <div
-    class="bg-background flex min-h-screen flex-col items-center justify-center p-1 transition-all duration-300 ease-in-out"
+    class="bg-background flex min-h-screen flex-col items-center p-4 transition-all duration-300"
   >
-    <div class="card-base">
-      <h2 class="text-2xl font-bold">Добро пожаловать, {{ authStore.user }}!</h2>
+    <div class="card-base !w-full !max-w-2xl max-w-2xl">
+      <h2>Мои заметки</h2>
 
-      <!-- Grid табличка -->
-      <div class="w-full space-y-5">
-        <div class="grid grid-cols-2 items-center gap-4 p-2">
-          <button @click="openAddModal" class="btn-correct">Добавить аккаунт</button>
-          <button @click="logout" class="btn-default">Выйти</button>
+      <!-- Форма добавления -->
+      <div class="w-full px-4 pb-4">
+        <div class="flex gap-2">
+          <input
+            v-model="newTodoText"
+            type="text"
+            placeholder="Что нужно сделать?"
+            class="bg-main-tb border-border text-text focus:ring-theme w-full rounded-lg border p-2 focus:ring-2 focus:outline-none"
+            @keyup.enter="addTodo"
+          />
+          <button @click="addTodo" class="btn-default !w-auto px-6">Добавить</button>
         </div>
-        <div class="text-text min-w-full overflow-x-auto p-4">
-          <!-- Заголовок (grid) -->
-          <div
-            class="border-border text-text mb-2 grid grid-cols-7 items-center gap-4 border-b-2 text-base font-medium uppercase"
+      </div>
+
+      <!-- Фильтры и статистика -->
+      <div class="flex w-full flex-wrap items-center justify-between gap-2 px-4 pb-2">
+        <div class="flex gap-2">
+          <button
+            v-for="filter in filters"
+            :key="filter.value"
+            @click="currentFilter = filter.value"
+            :class="[
+              'rounded-lg px-3 py-1 text-sm font-medium transition-all',
+              currentFilter === filter.value
+                ? 'bg-theme text-text'
+                : 'bg-main-tb text-text-a hover:bg-main-tb-a',
+            ]"
           >
-            <div class="col-span-3 text-left">Имя пользователя</div>
-            <div class="col-span-2 text-left">Пароль</div>
-            <div class="col-span-2 text-center">Действия</div>
+            {{ filter.label }}
+          </button>
+        </div>
+        <button
+          v-if="todosStore.completedTodos.length"
+          @click="todosStore.clearCompleted()"
+          class="btn-error !w-auto px-3 py-1 text-sm"
+        >
+          Очистить выполненные
+        </button>
+      </div>
+
+      <!-- Список задач -->
+      <div class="w-full space-y-2 p-4">
+        <div v-if="filteredTodos.length === 0" class="text-text-a py-8 text-center">
+          Нет задач. Добавьте свою первую цель!
+        </div>
+        <div
+          v-for="todo in filteredTodos"
+          :key="todo.id"
+          class="bg-main-tb border-border hover:border-theme-a flex items-center gap-3 rounded-xl border p-3 transition-all"
+        >
+          <!-- Чекбокс -->
+          <input
+            type="checkbox"
+            :checked="todo.completed"
+            @change="todosStore.toggleTodo(todo.id)"
+            class="bg-main checked:bg-theme relative h-5 w-5 cursor-pointer appearance-none rounded border border-gray-600 checked:border-gray-500"
+            :class="
+              todo.completed
+                ? 'after:absolute after:top-0 after:left-1 after:text-sm after:text-white after:content-[\'\u2713\']'
+                : ''
+            "
+          />
+
+          <!-- Текст задачи (редактируемый) -->
+          <div class="flex-1">
+            <span
+              v-if="editingId !== todo.id"
+              :class="[
+                'text-lg break-words',
+                todo.completed ? 'text-text-a line-through' : 'text-text',
+              ]"
+              @dblclick="startEdit(todo)"
+            >
+              {{ todo.text }}
+            </span>
+            <input
+              v-else
+              v-model="editText"
+              type="text"
+              class="bg-main border-border text-text w-full rounded-lg border p-1"
+              @keyup.enter="saveEdit(todo.id)"
+              @blur="saveEdit(todo.id)"
+              @keyup.esc="cancelEdit"
+              autofocus
+            />
           </div>
 
-          <!-- Строки данных -->
-          <div v-for="account in accountsStore.accounts" :key="account.id">
-            <div class="border-border mb-1 grid grid-cols-7 items-center gap-4 border-b text-base">
-              <div class="col-span-3 text-left">{{ account.username }}</div>
-              <div class="col-span-2 text-left">{{ account.password }}</div>
-              <div class="col-span-2 text-center">
-                <button
-                  @click="openEditModal(account)"
-                  class="btn-default mb-1 w-full py-1 text-base"
-                >
-                  Edit
-                </button>
-                <button
-                  @click="deleteAccount(account.id, account.username)"
-                  class="btn-error mb-1 w-full py-1 text-base"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
+          <!-- Кнопка удалить -->
+          <button
+            @click="todosStore.deleteTodo(todo.id)"
+            class="text-error hover:text-error-a transition-colors"
+            title="Удалить"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
+      </div>
+
+      <!-- Статистика внизу -->
+      <div class="text-text-a border-border w-full border-t px-4 py-3 text-center text-sm">
+        Всего: {{ todosStore.allCount }} | Активных: {{ todosStore.activeCount }} | Выполнено:
+        {{ todosStore.completedTodos.length }}
       </div>
     </div>
-
-    <!-- Modal for Add/Edit -->
-    <transition name="modal-fade">
-      <div
-        v-if="showModal"
-        class="bg-glass fixed inset-0 flex flex-col items-center justify-center p-1 transition-all duration-300 ease-in-out"
-      >
-        <div
-          class="bg-main border-border max-h-md m-5 flex h-fit w-full max-w-md flex-col items-center rounded-2xl border-5 transition-all duration-300 ease-in-out"
-        >
-          <h2>
-            {{ modalMode === 'add' ? 'Добавить аккаунт' : 'Редактировать аккаунт' }}
-          </h2>
-          <form @submit.prevent="saveAccount" class="w-full space-y-5">
-            <div class="p-5">
-              <label for="modal-username">Имя пользователя</label>
-              <Input id="modal-username" v-model="editForm.username" type="text" required />
-            </div>
-            <div class="p-5">
-              <label for="modal-password">Пароль</label>
-              <Input id="modal-password" v-model="editForm.password" type="password" required />
-            </div>
-            <div v-if="modalError" class="p-x-5 text-error flex justify-center font-medium">
-              {{ modalError }}
-            </div>
-            <div class="grid grid-cols-2 gap-2 px-5 py-2">
-              <Button type="button" state="Отмена" mode="block" @click="closeModal"></Button>
-              <Button type="submit" state="Сохранить" @click="closeModal"></Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { useAuthStore } from '@/stores/users/auth';
-import { useAccountsStore } from '@/stores/users/accounts';
-import { useRouter } from 'vue-router';
-import Button from '@/components/forms/SmartButton.vue';
-import Input from '@/components/forms/SmartInput.vue';
+import { ref, computed } from 'vue';
+import { useTodosStore } from '@/stores/uniqueStorage/todos';
 
-const authStore = useAuthStore();
-const accountsStore = useAccountsStore();
-const router = useRouter();
+const todosStore = useTodosStore();
 
-const showModal = ref(false);
-const modalMode = ref('add');
-const editForm = reactive({ id: null, username: '', password: '' });
-const modalError = ref('');
+// Новая задача
+const newTodoText = ref('');
 
-const openAddModal = () => {
-  modalMode.value = 'add';
-  editForm.id = null;
-  editForm.username = '';
-  editForm.password = '';
-  modalError.value = '';
-  showModal.value = true;
-};
+// Фильтры
+const filters = [
+  { value: 'all', label: 'Все' },
+  { value: 'active', label: 'Активные' },
+  { value: 'completed', label: 'Выполненные' },
+];
+const currentFilter = ref('all');
 
-const openEditModal = (account) => {
-  modalMode.value = 'edit';
-  editForm.id = account.id;
-  editForm.username = account.username;
-  editForm.password = account.password;
-  modalError.value = '';
-  showModal.value = true;
-};
+const filteredTodos = computed(() => {
+  if (currentFilter.value === 'active') return todosStore.activeTodos;
+  if (currentFilter.value === 'completed') return todosStore.completedTodos;
+  return todosStore.todos;
+});
 
-const closeModal = () => {
-  showModal.value = false;
-};
-
-const saveAccount = () => {
-  modalError.value = '';
-  const existing = accountsStore.accounts.find((acc) => acc.username === editForm.username);
-  if (existing && (modalMode.value === 'add' || existing.id !== editForm.id)) {
-    modalError.value = 'Пользователь с таким именем уже существует';
-    return;
-  }
-
-  if (modalMode.value === 'add') {
-    accountsStore.addAccount({ username: editForm.username, password: editForm.password });
-  } else {
-    accountsStore.updateAccount(editForm.id, {
-      username: editForm.username,
-      password: editForm.password,
-    });
-    if (authStore.user === accountsStore.accounts.find((a) => a.id === editForm.id)?.username) {
-      authStore.user = editForm.username;
-    }
-  }
-  closeModal();
-};
-
-const deleteAccount = (id, username) => {
-  if (confirm(`Вы уверены, что хотите удалить аккаунт ${username}?`)) {
-    accountsStore.deleteAccount(id);
-    if (authStore.user === username) {
-      authStore.logout();
-      router.push('/');
-    }
+// Добавление
+const addTodo = () => {
+  if (newTodoText.value.trim()) {
+    todosStore.addTodo(newTodoText.value);
+    newTodoText.value = '';
   }
 };
 
-const logout = () => {
-  authStore.logout();
-  router.push('/');
+// Редактирование (по двойному клику)
+const editingId = ref(null);
+const editText = ref('');
+
+const startEdit = (todo) => {
+  editingId.value = todo.id;
+  editText.value = todo.text;
+};
+
+const saveEdit = (id) => {
+  if (editingId.value === id) {
+    todosStore.updateTodo(id, editText.value);
+    editingId.value = null;
+    editText.value = '';
+  }
+};
+
+const cancelEdit = () => {
+  editingId.value = null;
+  editText.value = '';
 };
 </script>

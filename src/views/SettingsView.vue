@@ -2,7 +2,7 @@
   <div
     class="bg-background flex min-h-screen flex-col items-center justify-center p-4 transition-all duration-300"
   >
-    <div class="card-base !w-full max-w-md">
+    <div class="card-base w-full! max-w-md">
       <h2>Настройки чат-бота</h2>
 
       <div class="w-full space-y-5 p-4">
@@ -32,23 +32,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useOpenRouterStore } from '@/stores/llm/openrouter';
+import { useSettingsView } from '@/composables/useSettingsView';
 import Input from '@/components/forms/SmartInput.vue';
 
-const store = useOpenRouterStore();
-const apiKeyInput = ref(store.apiKey);
-const saveSuccess = ref(false);
-
-const saveKey = () => {
-  store.setApiKey(apiKeyInput.value);
-  saveSuccess.value = true;
-  setTimeout(() => (saveSuccess.value = false), 2000);
-};
-
-const clearHistory = () => {
-  if (confirm('Удалить всю историю сообщений?')) {
-    store.clearHistory();
-  }
-};
+const {
+  store,
+  apiKeyInput,
+  saveSuccess,
+  saveKey,
+  clearHistory,
+} = useSettingsView();
 </script>

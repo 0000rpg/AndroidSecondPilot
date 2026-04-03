@@ -30,7 +30,7 @@
           <button
             @click="send"
             :disabled="store.loading || !userInput.trim()"
-            class="btn-default !w-auto px-6"
+            class="btn-default w-auto! px-6"
           >
             ⇧
           </button>

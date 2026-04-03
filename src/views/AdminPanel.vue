@@ -50,7 +50,7 @@
     <transition name="modal-fade">
       <div
         v-if="showModal"
-        class="bg-glass fixed inset-0 flex flex-col items-center justify-center p-1 transition-all duration-300 ease-in-out"
+        class="bg-glass fixed overflow-y-auto md:pt-50 inset-0 flex flex-col items-center justify-center p-1 transition-all duration-300 ease-in-out"
       >
         <div
           class="bg-main border-border max-h-md m-5 flex h-fit w-full max-w-md flex-col items-center rounded-2xl border-5 transition-all duration-300 ease-in-out"

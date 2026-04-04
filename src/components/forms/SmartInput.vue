@@ -1,17 +1,19 @@
 <template>
   <input
     :class="inputClasses"
-    :type="type"
+    :type="inputType"
     :value="modelValue"
     :placeholder="placeholder"
     :required="required"
     @input="onInput"
     v-bind="$attrs"
+    @dblclick="handleShowPassword"
+    @touchstart="onTouchStart"
   />
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
   modelValue: {
@@ -38,6 +40,11 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
+// Реактивные
+const currentType = ref(props.type);
+
+let lastTouch = 0;
+const DOUBLE_TAP_DELAY = 300;
 const onInput = (event) => {
   emit('update:modelValue', event.target.value);
 };
@@ -67,4 +74,26 @@ const inputClasses = computed(() => {
   const modeClasses = classMap[props.mode] || classMap.default;
   return [...baseClasses, ...modeClasses];
 });
+
+const inputType = computed(() => currentType.value);
+
+const onTouchStart = (touchEvent) => {
+  const currentTime = new Date().getTime();
+  const tapLength = currentTime - lastTouch;
+
+  if (tapLength < DOUBLE_TAP_DELAY && tapLength > 0) {
+    touchEvent.preventDefault();
+    handleShowPassword();
+  }
+
+  lastTouch = currentTime;
+};
+
+const handleShowPassword = () => {
+  if (currentType.value === 'password') {
+    currentType.value = 'text';
+  } else if (currentType.value === 'text' && props.type === 'password') {
+    currentType.value = 'password';
+  }
+};
 </script>

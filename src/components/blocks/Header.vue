@@ -1,6 +1,6 @@
 <template>
   <header
-    class="bg-background border-border text-text sticky top-0 z-50 w-full border-b-2 transition-all duration-300 ease-in-out"
+    class="bg-background border-border text-text sticky top-0 z-50 w-screen max-w-screen border-b-2 transition-all duration-300 ease-in-out"
   >
     <div class="container mx-auto flex h-16 items-center justify-between px-4">
       <!-- Логотип или бренд -->

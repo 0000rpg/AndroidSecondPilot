@@ -45,13 +45,13 @@ class MarkdownParser {
     const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
     return text.replace(codeBlockRegex, (match, lang, code) => {
       return this.codeColorise(
-        `<pre><code class="language-${lang}">${this.escapeHtml(code.trim())}</code></pre>`
+        `<pre class="border-b-2 border-t-2 border-border"><code class="language-${lang}">${this.escapeHtml(code.trim())}</code></pre>`
       );
     });
   }
 
   codeColorise(text) {
-    const startRegex = /<pre><code[^>]*>/;
+    const startRegex = /<pre[^>]*><code[^>]*>/;
     const startBlock = text.match(startRegex)[0];
     text = text.replace(startBlock, '732826startBlock2837028');
 
@@ -195,7 +195,6 @@ class MarkdownParser {
     html = this.parseLists(html);
     html = this.parseParagraphs(html);
     html = html.replace(/\n{2,}/g, '\n').trim();
-    console.log(html);
 
     return html;
   }

@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 export const useChatsStore = defineStore('chats', {
   state: () => ({
     apiKey: '',
-    model: 'qwen/qwen3.6-plus:free',
+    model: 'nvidia/nemotron-3-super-120b-a12b:free', //'qwen/qwen3.6-plus:free',
     chats: [],
     currentChatId: null,
     loading: false,
@@ -75,20 +75,17 @@ export const useChatsStore = defineStore('chats', {
       this.error = null;
 
       // Добавляем сообщение пользователя
-      chat.messages.push({ role: 'user', content: content.trim() });
+      const userMessage = { role: 'user', content: content.trim() };
+      chat.messages.push(userMessage);
       chat.updatedAt = new Date().toISOString();
 
-      // Создаём placeholder для ответа ассистента
-      const assistantMessage = {
-        role: 'assistant',
-        content: '',
-        reasoning_details: null,
-      };
-      chat.messages.push(assistantMessage);
+      // Плейсхолдер для ответа ассистента
+      const assistantPlaceholder = { role: 'assistant', content: '', reasoning_details: null };
+      chat.messages.push(assistantPlaceholder);
 
       // Подготовка истории для API (без reasoning_details)
       const apiMessages = chat.messages
-        .filter((m) => m.role !== 'system') // если понадобится system prompt
+        .filter((m) => m.role !== 'system')
         .map((m) => ({ role: m.role, content: m.content }));
 
       try {
@@ -123,7 +120,7 @@ export const useChatsStore = defineStore('chats', {
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
-          buffer = lines.pop(); // последняя часть может быть неполной
+          buffer = lines.pop();
 
           for (const line of lines) {
             const trimmed = line.trim();
@@ -134,12 +131,50 @@ export const useChatsStore = defineStore('chats', {
                 const delta = json.choices?.[0]?.delta;
                 if (delta?.content) {
                   fullContent += delta.content;
-                  assistantMessage.content = fullContent;
-                  // Обновляем реактивно (Vue должен подхватить)
+                  // Создаём новый объект сообщения ассистента
+                  const updatedAssistant = {
+                    role: 'assistant',
+                    content: fullContent,
+                    reasoning_details: reasoningDetails,
+                  };
+                  // Заменяем последнее сообщение в массиве (плейсхолдер) на новое
+                  const chatIndex = this.chats.findIndex((c) => c.id === chat.id);
+                  if (chatIndex !== -1) {
+                    const newMessages = [...this.chats[chatIndex].messages];
+                    newMessages[newMessages.length - 1] = updatedAssistant;
+                    this.chats[chatIndex] = {
+                      ...this.chats[chatIndex],
+                      messages: newMessages,
+                      updatedAt: new Date().toISOString(),
+                    };
+                    // Если текущий чат тот же, обновляем ссылку (для геттера)
+                    if (this.currentChatId === chat.id) {
+                      // Принудительно обновляем currentChat через замену объекта
+                      this.currentChatId = null;
+                      this.currentChatId = chat.id;
+                    }
+                  }
                 }
                 if (delta?.reasoning_details) {
                   reasoningDetails = delta.reasoning_details;
-                  assistantMessage.reasoning_details = reasoningDetails;
+                  // Аналогично обновляем reasoning_details
+                  const chatIndex = this.chats.findIndex((c) => c.id === chat.id);
+                  if (chatIndex !== -1) {
+                    const newMessages = [...this.chats[chatIndex].messages];
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    if (lastMsg.role === 'assistant') {
+                      lastMsg.reasoning_details = reasoningDetails;
+                    }
+                    this.chats[chatIndex] = {
+                      ...this.chats[chatIndex],
+                      messages: newMessages,
+                      updatedAt: new Date().toISOString(),
+                    };
+                    if (this.currentChatId === chat.id) {
+                      this.currentChatId = null;
+                      this.currentChatId = chat.id;
+                    }
+                  }
                 }
               } catch (e) {
                 console.warn('Ошибка парсинга SSE:', e);
@@ -147,13 +182,23 @@ export const useChatsStore = defineStore('chats', {
             }
           }
         }
-        // Если reasoning_details не пришёл в потоке, проверяем финальный объект (некоторые модели присылают отдельно)
-        // Обновляем время последнего изменения
-        chat.updatedAt = new Date().toISOString();
       } catch (err) {
         this.error = err.message;
-        // Удаляем placeholder сообщения ассистента при ошибке
-        chat.messages.pop();
+        // Удаляем последнее сообщение (плейсхолдер) при ошибке
+        const chatIndex = this.chats.findIndex((c) => c.id === chat.id);
+        if (chatIndex !== -1) {
+          const newMessages = [...this.chats[chatIndex].messages];
+          newMessages.pop();
+          this.chats[chatIndex] = {
+            ...this.chats[chatIndex],
+            messages: newMessages,
+            updatedAt: new Date().toISOString(),
+          };
+          if (this.currentChatId === chat.id) {
+            this.currentChatId = null;
+            this.currentChatId = chat.id;
+          }
+        }
       } finally {
         this.loading = false;
       }

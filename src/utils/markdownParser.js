@@ -1,5 +1,8 @@
+import { TableParser } from './tableParser';
+
 class MarkdownParser {
   constructor() {
+    this.tableParser = TableParser;
     this.rules = [
       {
         regex: /^###### (.*$)/gm,
@@ -45,7 +48,7 @@ class MarkdownParser {
     const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
     return text.replace(codeBlockRegex, (match, lang, code) => {
       return this.codeColorise(
-        `<pre class="border-b-2 border-t-2 border-border"><code class="language-${lang}">${this.escapeHtml(code.trim())}</code></pre>`
+        `<pre class="border-b-2 border-t-2 border-border overflow-x-auto"><code class="language-${lang}">${this.escapeHtml(code.trim())}</code></pre>`
       );
     });
   }
@@ -159,7 +162,8 @@ class MarkdownParser {
             para.includes('</ol>') ||
             para.includes('<pre>') ||
             para.includes('<blockquote>') ||
-            para.includes('<hr>'))
+            para.includes('<hr>') ||
+            para.includes('<table>'))
         ) {
           console.log(para);
           return para;
@@ -182,6 +186,10 @@ class MarkdownParser {
     return text.replace(/[&<>"']/g, (char) => htmlEntities[char]);
   }
 
+  parseTables(text) {
+    return this.tableParser.parse(text);
+  }
+
   parse(markdown) {
     if (!markdown) return '';
 
@@ -192,6 +200,7 @@ class MarkdownParser {
       html = html.replace(rule.regex, rule.replace);
     }
 
+    html = this.parseTables(html);
     html = this.parseLists(html);
     html = this.parseParagraphs(html);
     html = html.replace(/\n{2,}/g, '\n').trim();

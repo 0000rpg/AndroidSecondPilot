@@ -84,7 +84,7 @@ import { ref } from 'vue';
 import { useChatsStore } from '@/stores/llm/chats';
 
 const chatStore = useChatsStore();
-const showChatList = ref(true);
+const showChatList = ref(false);
 const activeMenu = ref(null);
 const editingId = ref(null);
 const editName = ref('');

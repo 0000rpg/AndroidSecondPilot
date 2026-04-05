@@ -9,11 +9,55 @@
           class="custom-scrollbar flex h-full max-w-xs min-w-2xs flex-col items-start overflow-x-hidden overflow-y-auto bg-transparent p-2 pr-4"
         >
           <div
-            class="bg-main border-border text-text m-2 w-full overflow-x-clip overflow-y-clip rounded-2xl border p-1 px-2"
-            v-for="dialog in dialogList"
-            :key="dialog.id"
+            v-for="chat in chatStore.chats"
+            :key="chat.id"
+            class="bg-main border-border text-text hover:bg-main-a relative mb-2 w-full cursor-pointer rounded-2xl border p-2 transition-all"
+            :class="{ 'border-theme border-2': chatStore.currentChatId === chat.id }"
+            @click="chatStore.setCurrentChat(chat.id)"
           >
-            {{ dialog.name }}
+            <div class="flex items-center justify-between">
+              <span class="truncate text-sm font-medium" v-if="editingId !== chat.id">
+                {{ chat.name }}
+              </span>
+              <input
+                v-else
+                v-model="editName"
+                type="text"
+                class="bg-main-tb border-border text-text z-5 w-full rounded px-1 text-sm"
+                @keyup.enter="saveRename(chat.id)"
+                @blur="saveRename(chat.id)"
+                @keyup.esc="cancelEdit"
+                autofocus
+              />
+              <div class="absolute top-5 right-1">
+                <button
+                  @click.stop="toggleMenu(chat.id)"
+                  class="text-text-a hover:text-text px-1 text-xl leading-5"
+                >
+                  ⋮
+                </button>
+                <div
+                  v-if="activeMenu === chat.id"
+                  class="bg-main border-border absolute top-5 right-0 z-20 w-34 rounded-md border shadow-md"
+                >
+                  <button
+                    @click="startRename(chat)"
+                    class="hover:bg-main-tb block w-full px-3 py-1 text-left text-sm"
+                  >
+                    Переименовать
+                  </button>
+                  <button
+                    @click="deleteChat(chat.id)"
+                    class="hover:bg-main-tb text-error block w-full px-3 py-1 text-left text-sm"
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="text-text-a mt-1 truncate text-xs">
+              {{ lastMessagePreview(chat) }}
+            </div>
           </div>
         </div>
       </div>
@@ -29,6 +73,7 @@
   </div>
   <div
     class="bg-glass border-border hover:bg-theme-a fixed top-16 right-2 z-20 m-4 cursor-pointer rounded-2xl border px-2.5 py-1 transition-all duration-300 ease-out"
+    @click="createNewChat"
   >
     +
   </div>
@@ -36,18 +81,54 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useChatsStore } from '@/stores/llm/chats';
 
+const chatStore = useChatsStore();
 const showChatList = ref(true);
-const dialogList = ref([
-  {
-    name: 'First ap complete',
-    id: '1234',
-    lastChanged: '05-04-2026',
-  },
-  {
-    name: 'a',
-    id: '1234',
-    lastChanged: '05-04-2026',
-  },
-]);
+const activeMenu = ref(null);
+const editingId = ref(null);
+const editName = ref('');
+
+const lastMessagePreview = (chat) => {
+  const lastMsg = chat.messages[chat.messages.length - 1];
+  if (!lastMsg) return 'Нет сообщений';
+  const preview =
+    lastMsg.content.length > 50 ? lastMsg.content.slice(0, 50) + '…' : lastMsg.content;
+  return `${lastMsg.role === 'user' ? '👤' : '🤖'} ${preview}`;
+};
+
+const toggleMenu = (id) => {
+  activeMenu.value = activeMenu.value === id ? null : id;
+};
+
+const createNewChat = () => {
+  chatStore.createChat();
+  activeMenu.value = null;
+};
+
+const startRename = (chat) => {
+  editingId.value = chat.id;
+  editName.value = chat.name;
+  activeMenu.value = null;
+};
+
+const saveRename = (id) => {
+  if (editingId.value === id && editName.value.trim()) {
+    chatStore.renameChat(id, editName.value);
+  }
+  editingId.value = null;
+  editName.value = '';
+};
+
+const cancelEdit = () => {
+  editingId.value = null;
+  editName.value = '';
+};
+
+const deleteChat = (id) => {
+  if (confirm('Удалить этот чат?')) {
+    chatStore.deleteChat(id);
+    activeMenu.value = null;
+  }
+};
 </script>

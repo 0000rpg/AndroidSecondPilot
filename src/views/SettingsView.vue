@@ -4,7 +4,6 @@
   >
     <div class="card-base w-full! max-w-md">
       <h2>Настройки чат-бота</h2>
-
       <div class="w-full space-y-5 p-4">
         <div>
           <label>API ключ</label>
@@ -16,14 +15,15 @@
           />
           <div class="text-text-a mt-1 text-xs">Ключ хранится локально в браузере</div>
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <button @click="saveKey" class="btn-default">Сохранить ключ</button>
-          <button @click="clearHistory" class="btn-error">Очистить историю</button>
+          <button @click="clearHistory" class="btn-error">Очистить историю (текущий чат)</button>
         </div>
-
-        <div v-if="store.error && store.error.includes('API ключ')" class="text-error text-center">
-          {{ store.error }}
+        <div
+          v-if="chatStore.error && chatStore.error.includes('API ключ')"
+          class="text-error text-center"
+        >
+          {{ chatStore.error }}
         </div>
         <div v-if="saveSuccess" class="text-correct text-center">Ключ сохранён</div>
       </div>
@@ -32,14 +32,23 @@
 </template>
 
 <script setup>
-import { useSettingsView } from '@/composables/useSettingsView';
+import { ref } from 'vue';
+import { useChatsStore } from '@/stores/llm/chats';
 import Input from '@/components/forms/SmartInput.vue';
 
-const {
-  store,
-  apiKeyInput,
-  saveSuccess,
-  saveKey,
-  clearHistory,
-} = useSettingsView();
+const chatStore = useChatsStore();
+const apiKeyInput = ref(chatStore.apiKey);
+const saveSuccess = ref(false);
+
+const saveKey = () => {
+  chatStore.setApiKey(apiKeyInput.value);
+  saveSuccess.value = true;
+  setTimeout(() => (saveSuccess.value = false), 2000);
+};
+
+const clearHistory = () => {
+  if (confirm('Удалить всю историю сообщений в текущем чате?')) {
+    chatStore.clearCurrentChatMessages();
+  }
+};
 </script>

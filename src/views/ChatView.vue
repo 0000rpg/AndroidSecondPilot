@@ -9,13 +9,22 @@
       <div class="flex h-full w-screen max-w-4xl flex-col">
         <!-- Область сообщений -->
         <div class="custom-scrollbar h-full w-full overflow-y-auto p-4 pb-30">
-          <div v-if="store.messages.length === 0" class="text-text-a text-center">
+          <div
+            v-if="!chatStore.currentChat || chatStore.currentChat.messages.length === 0"
+            class="text-text-a text-center"
+          >
             Нет сообщений. Начните диалог!
           </div>
-          <ChatMessage v-for="(msg, idx) in store.messages" :key="idx" :message="msg" />
-          <div v-if="store.loading" class="text-text-a mt-2 text-center">Ассистент печатает...</div>
-          <div v-if="store.error" class="text-error mt-2 text-center">
-            {{ store.error }}
+          <ChatMessage
+            v-for="(msg, idx) in chatStore.currentChat?.messages"
+            :key="idx"
+            :message="msg"
+          />
+          <div v-if="chatStore.loading" class="text-text-a mt-2 text-center">
+            Ассистент печатает...
+          </div>
+          <div v-if="chatStore.error" class="text-error mt-2 text-center">
+            {{ chatStore.error }}
           </div>
         </div>
 
@@ -33,7 +42,7 @@
             ></textarea>
             <button
               @click="send"
-              :disabled="store.loading || !userInput.trim()"
+              :disabled="chatStore.loading || !userInput.trim()"
               class="btn-default w-auto! px-6"
             >
               ⇧
@@ -47,18 +56,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useOpenRouterStore } from '@/stores/llm/openrouter';
+import { ref, onMounted } from 'vue';
+import { useChatsStore } from '@/stores/llm/chats';
 import ChatMessage from '@/components/chat/ChatMessage.vue';
 import ChatList from '@/components/chat/ChatList.vue';
 
-const store = useOpenRouterStore();
+const chatStore = useChatsStore();
 const userInput = ref('');
 
+onMounted(() => {
+  chatStore.init();
+});
+
 const send = async () => {
-  if (!userInput.value.trim() || store.loading) return;
+  if (!userInput.value.trim() || chatStore.loading) return;
   const message = userInput.value;
   userInput.value = '';
-  await store.sendMessage(message);
+  await chatStore.sendMessage(message);
 };
 </script>

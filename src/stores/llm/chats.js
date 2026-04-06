@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 export const useChatsStore = defineStore('chats', {
   state: () => ({
     apiKey: '',
-    model: 'nvidia/nemotron-3-super-120b-a12b:free', //'qwen/qwen3.6-plus:free',
+    model: 'nvidia/nemotron-3-super-120b-a12b:free',
     chats: [],
     currentChatId: null,
     loading: false,
@@ -22,6 +22,7 @@ export const useChatsStore = defineStore('chats', {
         this.currentChatId = this.chats[0].id;
       }
     },
+
     createChat(name = null) {
       const id = Date.now().toString();
       const chatName = name || `Чат ${this.chats.length + 1}`;
@@ -36,6 +37,7 @@ export const useChatsStore = defineStore('chats', {
       this.currentChatId = id;
       return id;
     },
+
     deleteChat(id) {
       const index = this.chats.findIndex((c) => c.id === id);
       if (index === -1) return;
@@ -44,30 +46,36 @@ export const useChatsStore = defineStore('chats', {
         this.currentChatId = this.chats.length ? this.chats[0].id : null;
       }
     },
+
     renameChat(id, newName) {
       const chat = this.chats.find((c) => c.id === id);
       if (chat) chat.name = newName.trim() || 'Без названия';
     },
+
     setCurrentChat(id) {
       if (this.chats.find((c) => c.id === id)) {
         this.currentChatId = id;
       }
     },
+
     clearCurrentChatMessages() {
       const chat = this.currentChat;
       if (chat) chat.messages = [];
     },
-    // Удалить всё
+
     clearAllChats() {
       this.chats = [];
       this.currentChatId = null;
       this.createChat('Новый чат');
     },
+
     setApiKey(key) {
       this.apiKey = key;
       this.error = null;
     },
+
     async sendMessage(content) {
+      // Валидация
       if (!this.apiKey) {
         this.error = 'API ключ не задан. Перейдите в настройки.';
         return;
@@ -89,10 +97,14 @@ export const useChatsStore = defineStore('chats', {
       const assistantPlaceholder = { role: 'assistant', content: '', reasoning_details: null };
       chat.messages.push(assistantPlaceholder);
 
-      // Подготовка истории для API (без reasoning_details)
+      // Подготовка истории для API
       const apiMessages = chat.messages
         .filter((m) => m.role !== 'system')
         .map((m) => ({ role: m.role, content: m.content }));
+
+      // AbortController для таймаута
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 секунд таймаут
 
       try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -105,13 +117,23 @@ export const useChatsStore = defineStore('chats', {
             model: this.model,
             messages: apiMessages,
             stream: true,
-            reasoning: { enabled: true },
+            // reasoning: { enabled: true }, // временно отключено для стабильности
           }),
+          signal: controller.signal,
         });
 
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.error?.message || 'Ошибка API');
+          let errorMessage = 'Ошибка API';
+          try {
+            const errData = await response.json();
+            errorMessage =
+              errData.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+          } catch (e) {
+            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
         }
 
         const reader = response.body.getReader();
@@ -120,89 +142,130 @@ export const useChatsStore = defineStore('chats', {
         let fullContent = '';
         let reasoningDetails = null;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        // Основной цикл чтения потока с защитой от ошибок
+        try {
+          while (true) {
+            // Проверяем, существует ли ещё чат (не удалили ли его)
+            const chatStillExists = this.chats.some((c) => c.id === chat.id);
+            if (!chatStillExists) {
+              console.warn('Чат был удалён во время получения ответа');
+              break;
+            }
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed === 'data: [DONE]') continue;
-            if (trimmed.startsWith('data: ')) {
-              try {
-                const json = JSON.parse(trimmed.slice(6));
-                const delta = json.choices?.[0]?.delta;
-                if (delta?.content) {
-                  fullContent += delta.content;
-                  // Создаём новый объект сообщения ассистента
-                  const updatedAssistant = {
-                    role: 'assistant',
-                    content: fullContent,
-                    reasoning_details: reasoningDetails,
-                  };
-                  // Заменяем последнее сообщение в массиве (плейсхолдер) на новое
-                  const chatIndex = this.chats.findIndex((c) => c.id === chat.id);
-                  if (chatIndex !== -1) {
-                    const newMessages = [...this.chats[chatIndex].messages];
-                    newMessages[newMessages.length - 1] = updatedAssistant;
-                    this.chats[chatIndex] = {
-                      ...this.chats[chatIndex],
-                      messages: newMessages,
-                      updatedAt: new Date().toISOString(),
-                    };
-                    // Если текущий чат тот же, обновляем ссылку (для геттера)
-                    if (this.currentChatId === chat.id) {
-                      // Принудительно обновляем currentChat через замену объекта
-                      this.currentChatId = null;
-                      this.currentChatId = chat.id;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed === 'data: [DONE]') continue;
+
+              if (trimmed.startsWith('data: ')) {
+                try {
+                  const json = JSON.parse(trimmed.slice(6));
+
+                  // Проверка на ошибку от API
+                  if (json.error) {
+                    throw new Error(json.error.message || 'Ошибка от OpenRouter API');
+                  }
+
+                  const delta = json.choices?.[0]?.delta;
+                  if (!delta) continue;
+
+                  // Обновление контента
+                  if (delta.content !== undefined && delta.content !== null) {
+                    fullContent += delta.content;
+                    const chatToUpdate = this.chats.find((c) => c.id === chat.id);
+                    if (chatToUpdate && chatToUpdate.messages.length > 0) {
+                      const lastIndex = chatToUpdate.messages.length - 1;
+                      if (chatToUpdate.messages[lastIndex].role === 'assistant') {
+                        chatToUpdate.messages[lastIndex] = {
+                          ...chatToUpdate.messages[lastIndex],
+                          content: fullContent,
+                          reasoning_details: reasoningDetails,
+                        };
+                        chatToUpdate.updatedAt = new Date().toISOString();
+                      }
                     }
                   }
-                }
-                if (delta?.reasoning_details) {
-                  reasoningDetails = delta.reasoning_details;
-                  // Аналогично обновляем reasoning_details
-                  const chatIndex = this.chats.findIndex((c) => c.id === chat.id);
-                  if (chatIndex !== -1) {
-                    const newMessages = [...this.chats[chatIndex].messages];
-                    const lastMsg = newMessages[newMessages.length - 1];
-                    if (lastMsg.role === 'assistant') {
-                      lastMsg.reasoning_details = reasoningDetails;
-                    }
-                    this.chats[chatIndex] = {
-                      ...this.chats[chatIndex],
-                      messages: newMessages,
-                      updatedAt: new Date().toISOString(),
-                    };
-                    if (this.currentChatId === chat.id) {
-                      this.currentChatId = null;
-                      this.currentChatId = chat.id;
+
+                  // Обновление reasoning_details
+                  if (delta.reasoning_details !== undefined && delta.reasoning_details !== null) {
+                    reasoningDetails = delta.reasoning_details;
+                    const chatToUpdate = this.chats.find((c) => c.id === chat.id);
+                    if (chatToUpdate && chatToUpdate.messages.length > 0) {
+                      const lastIndex = chatToUpdate.messages.length - 1;
+                      if (chatToUpdate.messages[lastIndex].role === 'assistant') {
+                        chatToUpdate.messages[lastIndex] = {
+                          ...chatToUpdate.messages[lastIndex],
+                          content: fullContent,
+                          reasoning_details: reasoningDetails,
+                        };
+                        chatToUpdate.updatedAt = new Date().toISOString();
+                      }
                     }
                   }
+                } catch (e) {
+                  console.error('Ошибка парсинга SSE:', e, 'Line:', trimmed);
+                  // Не прерываем поток из-за одной ошибки парсинга
                 }
-              } catch (e) {
-                console.warn('Ошибка парсинга SSE:', e);
               }
+            }
+          }
+        } catch (streamError) {
+          console.error('Ошибка при чтении потока:', streamError);
+          throw streamError;
+        } finally {
+          // Закрываем reader
+          try {
+            await reader.cancel();
+          } catch (e) {
+            // Игнорируем ошибки при закрытии
+          }
+        }
+
+        // Финальная проверка: если контент так и не пришёл, удаляем плейсхолдер
+        const finalChat = this.chats.find((c) => c.id === chat.id);
+        if (finalChat && finalChat.messages.length > 0) {
+          const lastMessage = finalChat.messages[finalChat.messages.length - 1];
+          if (
+            lastMessage.role === 'assistant' &&
+            !lastMessage.content &&
+            !lastMessage.reasoning_details
+          ) {
+            // Удаляем пустой плейсхолдер
+            finalChat.messages.pop();
+            finalChat.updatedAt = new Date().toISOString();
+            if (!this.error) {
+              this.error = 'Ассистент не вернул ответа. Попробуйте ещё раз.';
             }
           }
         }
       } catch (err) {
-        this.error = err.message;
+        console.error('Ошибка отправки сообщения:', err);
+
+        // Формируем понятное сообщение об ошибке
+        if (err.name === 'AbortError') {
+          this.error = 'Превышено время ожидания ответа от сервера (2 минуты). Попробуйте ещё раз.';
+        } else if (
+          err.message.includes('Failed to fetch') ||
+          err.message.includes('NetworkError')
+        ) {
+          this.error = 'Ошибка сети. Проверьте подключение к интернету.';
+        } else {
+          this.error = err.message || 'Произошла неизвестная ошибка';
+        }
+
         // Удаляем последнее сообщение (плейсхолдер) при ошибке
-        const chatIndex = this.chats.findIndex((c) => c.id === chat.id);
-        if (chatIndex !== -1) {
-          const newMessages = [...this.chats[chatIndex].messages];
-          newMessages.pop();
-          this.chats[chatIndex] = {
-            ...this.chats[chatIndex],
-            messages: newMessages,
-            updatedAt: new Date().toISOString(),
-          };
-          if (this.currentChatId === chat.id) {
-            this.currentChatId = null;
-            this.currentChatId = chat.id;
+        const chatToUpdate = this.chats.find((c) => c.id === chat.id);
+        if (chatToUpdate && chatToUpdate.messages.length > 0) {
+          const lastMessage = chatToUpdate.messages[chatToUpdate.messages.length - 1];
+          if (lastMessage.role === 'assistant') {
+            chatToUpdate.messages.pop();
+            chatToUpdate.updatedAt = new Date().toISOString();
           }
         }
       } finally {

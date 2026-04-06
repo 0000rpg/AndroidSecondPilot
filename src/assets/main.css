@@ -22,6 +22,8 @@
 
   --color-correct-tb: rgba(67, 195, 17, 0.4);
   --color-error-tb: rgba(193, 0, 7, 0.6);
+
+  --color-chat-user: rgba(237, 108, 33, 0.4);
 }
 
 @utility bg-stripes-diagonal-transparent {

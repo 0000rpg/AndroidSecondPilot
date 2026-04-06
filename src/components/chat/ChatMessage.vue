@@ -3,7 +3,7 @@
     <div
       :class="[
         'max-w-[80%] rounded-2xl p-3',
-        isUser ? 'bg-theme text-text' : 'bg-main-a border-border text-text border',
+        isUser ? 'bg-chat-user text-text' : 'bg-main-a border-border text-text border',
       ]"
     >
       <div class="whitespace-pre-wrap" v-html="markdownParser.parse(message.content)"></div>

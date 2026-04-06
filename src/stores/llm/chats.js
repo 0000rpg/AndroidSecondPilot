@@ -1,9 +1,17 @@
+// src/stores/llm/chats.js
 import { defineStore } from 'pinia';
 
 export const useChatsStore = defineStore('chats', {
   state: () => ({
+    // OpenRouter
     apiKey: '',
     model: 'nvidia/nemotron-3-super-120b-a12b:free',
+    // Provider selection
+    provider: 'openrouter', // 'openrouter' or 'lmstudio'
+    // LMStudio settings
+    lmstudioUrl: 'http://localhost:1234/v1/chat/completions',
+    lmstudioModel: 'gemma-3-4b-it-qat',
+    // Common
     chats: [],
     currentChatId: null,
     loading: false,
@@ -74,10 +82,29 @@ export const useChatsStore = defineStore('chats', {
       this.error = null;
     },
 
+    setProvider(provider) {
+      this.provider = provider;
+      this.error = null;
+    },
+
+    setLmstudioUrl(url) {
+      this.lmstudioUrl = url;
+      this.error = null;
+    },
+
+    setLmstudioModel(model) {
+      this.lmstudioModel = model;
+      this.error = null;
+    },
+
     async sendMessage(content) {
-      // Валидация
-      if (!this.apiKey) {
-        this.error = 'API ключ не задан. Перейдите в настройки.';
+      // Валидация в зависимости от провайдера
+      if (this.provider === 'openrouter' && !this.apiKey) {
+        this.error = 'API ключ OpenRouter не задан. Перейдите в настройки.';
+        return;
+      }
+      if (this.provider === 'lmstudio' && !this.lmstudioUrl) {
+        this.error = 'URL LMStudio не задан. Перейдите в настройки.';
         return;
       }
       if (!content.trim()) return;
@@ -102,25 +129,41 @@ export const useChatsStore = defineStore('chats', {
         .filter((m) => m.role !== 'system')
         .map((m) => ({ role: m.role, content: m.content }));
 
-      // AbortController для таймаута
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 секунд таймаут
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
 
       try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: this.model,
-            messages: apiMessages,
-            stream: true,
-            // reasoning: { enabled: true }, // временно отключено для стабильности
-          }),
-          signal: controller.signal,
-        });
+        let response;
+        if (this.provider === 'openrouter') {
+          response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${this.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: this.model,
+              messages: apiMessages,
+              stream: true,
+            }),
+            signal: controller.signal,
+          });
+        } else {
+          // LM Studio — без стриминга (stream: false)
+          const proxyUrl = '/lmstudio'; // вместо прямого URL
+          response = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: this.lmstudioModel,
+              messages: apiMessages,
+              stream: false,
+            }),
+            signal: controller.signal,
+          });
+        }
 
         clearTimeout(timeoutId);
 
@@ -136,118 +179,119 @@ export const useChatsStore = defineStore('chats', {
           throw new Error(errorMessage);
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let buffer = '';
-        let fullContent = '';
-        let reasoningDetails = null;
+        if (this.provider === 'openrouter') {
+          // Обработка стриминга для OpenRouter
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let buffer = '';
+          let fullContent = '';
+          let reasoningDetails = null;
 
-        // Основной цикл чтения потока с защитой от ошибок
-        try {
-          while (true) {
-            // Проверяем, существует ли ещё чат (не удалили ли его)
-            const chatStillExists = this.chats.some((c) => c.id === chat.id);
-            if (!chatStillExists) {
-              console.warn('Чат был удалён во время получения ответа');
-              break;
-            }
+          try {
+            while (true) {
+              const chatStillExists = this.chats.some((c) => c.id === chat.id);
+              if (!chatStillExists) break;
 
-            const { done, value } = await reader.read();
-            if (done) break;
+              const { done, value } = await reader.read();
+              if (done) break;
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop();
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop();
 
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed || trimmed === 'data: [DONE]') continue;
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed === 'data: [DONE]') continue;
 
-              if (trimmed.startsWith('data: ')) {
-                try {
-                  const json = JSON.parse(trimmed.slice(6));
+                if (trimmed.startsWith('data: ')) {
+                  try {
+                    const json = JSON.parse(trimmed.slice(6));
+                    if (json.error) throw new Error(json.error.message || 'Ошибка OpenRouter API');
 
-                  // Проверка на ошибку от API
-                  if (json.error) {
-                    throw new Error(json.error.message || 'Ошибка от OpenRouter API');
-                  }
+                    const delta = json.choices?.[0]?.delta;
+                    if (!delta) continue;
 
-                  const delta = json.choices?.[0]?.delta;
-                  if (!delta) continue;
-
-                  // Обновление контента
-                  if (delta.content !== undefined && delta.content !== null) {
-                    fullContent += delta.content;
-                    const chatToUpdate = this.chats.find((c) => c.id === chat.id);
-                    if (chatToUpdate && chatToUpdate.messages.length > 0) {
-                      const lastIndex = chatToUpdate.messages.length - 1;
-                      if (chatToUpdate.messages[lastIndex].role === 'assistant') {
-                        chatToUpdate.messages[lastIndex] = {
-                          ...chatToUpdate.messages[lastIndex],
-                          content: fullContent,
-                          reasoning_details: reasoningDetails,
-                        };
-                        chatToUpdate.updatedAt = new Date().toISOString();
+                    if (delta.content !== undefined && delta.content !== null) {
+                      fullContent += delta.content;
+                      const chatToUpdate = this.chats.find((c) => c.id === chat.id);
+                      if (chatToUpdate && chatToUpdate.messages.length > 0) {
+                        const lastIndex = chatToUpdate.messages.length - 1;
+                        if (chatToUpdate.messages[lastIndex].role === 'assistant') {
+                          chatToUpdate.messages[lastIndex] = {
+                            ...chatToUpdate.messages[lastIndex],
+                            content: fullContent,
+                            reasoning_details: reasoningDetails,
+                          };
+                          chatToUpdate.updatedAt = new Date().toISOString();
+                        }
                       }
                     }
-                  }
 
-                  // Обновление reasoning_details
-                  if (delta.reasoning_details !== undefined && delta.reasoning_details !== null) {
-                    reasoningDetails = delta.reasoning_details;
-                    const chatToUpdate = this.chats.find((c) => c.id === chat.id);
-                    if (chatToUpdate && chatToUpdate.messages.length > 0) {
-                      const lastIndex = chatToUpdate.messages.length - 1;
-                      if (chatToUpdate.messages[lastIndex].role === 'assistant') {
-                        chatToUpdate.messages[lastIndex] = {
-                          ...chatToUpdate.messages[lastIndex],
-                          content: fullContent,
-                          reasoning_details: reasoningDetails,
-                        };
-                        chatToUpdate.updatedAt = new Date().toISOString();
+                    if (delta.reasoning_details !== undefined && delta.reasoning_details !== null) {
+                      reasoningDetails = delta.reasoning_details;
+                      const chatToUpdate = this.chats.find((c) => c.id === chat.id);
+                      if (chatToUpdate && chatToUpdate.messages.length > 0) {
+                        const lastIndex = chatToUpdate.messages.length - 1;
+                        if (chatToUpdate.messages[lastIndex].role === 'assistant') {
+                          chatToUpdate.messages[lastIndex] = {
+                            ...chatToUpdate.messages[lastIndex],
+                            content: fullContent,
+                            reasoning_details: reasoningDetails,
+                          };
+                          chatToUpdate.updatedAt = new Date().toISOString();
+                        }
                       }
                     }
+                  } catch (e) {
+                    console.error('Ошибка парсинга SSE:', e, 'Line:', trimmed);
                   }
-                } catch (e) {
-                  console.error('Ошибка парсинга SSE:', e, 'Line:', trimmed);
-                  // Не прерываем поток из-за одной ошибки парсинга
                 }
               }
             }
+          } catch (streamError) {
+            console.error('Ошибка при чтении потока:', streamError);
+            throw streamError;
+          } finally {
+            try {
+              await reader.cancel();
+            } catch (e) {}
           }
-        } catch (streamError) {
-          console.error('Ошибка при чтении потока:', streamError);
-          throw streamError;
-        } finally {
-          // Закрываем reader
-          try {
-            await reader.cancel();
-          } catch (e) {
-            // Игнорируем ошибки при закрытии
-          }
-        }
 
-        // Финальная проверка: если контент так и не пришёл, удаляем плейсхолдер
-        const finalChat = this.chats.find((c) => c.id === chat.id);
-        if (finalChat && finalChat.messages.length > 0) {
-          const lastMessage = finalChat.messages[finalChat.messages.length - 1];
-          if (
-            lastMessage.role === 'assistant' &&
-            !lastMessage.content &&
-            !lastMessage.reasoning_details
-          ) {
-            // Удаляем пустой плейсхолдер
-            finalChat.messages.pop();
-            finalChat.updatedAt = new Date().toISOString();
-            if (!this.error) {
-              this.error = 'Ассистент не вернул ответа. Попробуйте ещё раз.';
+          // Финальная проверка: если контент так и не пришёл, удаляем плейсхолдер
+          const finalChat = this.chats.find((c) => c.id === chat.id);
+          if (finalChat && finalChat.messages.length > 0) {
+            const lastMessage = finalChat.messages[finalChat.messages.length - 1];
+            if (
+              lastMessage.role === 'assistant' &&
+              !lastMessage.content &&
+              !lastMessage.reasoning_details
+            ) {
+              finalChat.messages.pop();
+              finalChat.updatedAt = new Date().toISOString();
+              if (!this.error) {
+                this.error = 'Ассистент не вернул ответа. Попробуйте ещё раз.';
+              }
+            }
+          }
+        } else {
+          // LM Studio — обычный JSON-ответ (без стриминга)
+          const data = await response.json();
+          const content = data.choices?.[0]?.message?.content || '';
+
+          const finalChat = this.chats.find((c) => c.id === chat.id);
+          if (finalChat && finalChat.messages.length > 0) {
+            const lastIndex = finalChat.messages.length - 1;
+            if (finalChat.messages[lastIndex].role === 'assistant') {
+              finalChat.messages[lastIndex].content = content;
+              finalChat.updatedAt = new Date().toISOString();
+            } else {
+              // На случай, если плейсхолдер был удалён
+              finalChat.messages.push({ role: 'assistant', content });
             }
           }
         }
       } catch (err) {
         console.error('Ошибка отправки сообщения:', err);
-
-        // Формируем понятное сообщение об ошибке
         if (err.name === 'AbortError') {
           this.error = 'Превышено время ожидания ответа от сервера (2 минуты). Попробуйте ещё раз.';
         } else if (
@@ -259,7 +303,6 @@ export const useChatsStore = defineStore('chats', {
           this.error = err.message || 'Произошла неизвестная ошибка';
         }
 
-        // Удаляем последнее сообщение (плейсхолдер) при ошибке
         const chatToUpdate = this.chats.find((c) => c.id === chat.id);
         if (chatToUpdate && chatToUpdate.messages.length > 0) {
           const lastMessage = chatToUpdate.messages[chatToUpdate.messages.length - 1];

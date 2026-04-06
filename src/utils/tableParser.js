@@ -11,20 +11,18 @@ class MdTableParser {
 
     while (i < lines.length) {
       const line = lines[i];
-      // Ищем потенциальное начало таблицы: строка, содержащая '|', не внутри HTML-тегов
+      // Ищем потенциальную таблицу: строка с '|' и следующая строка — разделитель
       if (
         this.isPossibleTableRow(line) &&
         i + 1 < lines.length &&
         this.isSeparatorRow(lines[i + 1])
       ) {
-        // Собираем все строки таблицы
         const tableRows = [line, lines[i + 1]];
         let j = i + 2;
         while (j < lines.length && this.isPossibleTableRow(lines[j])) {
           tableRows.push(lines[j]);
           j++;
         }
-        // Конвертируем собранный блок в HTML-таблицу
         const htmlTable = this.convertTable(tableRows);
         result.push(htmlTable);
         i = j;
@@ -37,12 +35,12 @@ class MdTableParser {
   }
 
   /**
-   * Проверяет, может ли строка быть строкой таблицы (содержит '|')
+   * Проверяет, может ли строка быть строкой таблицы (содержит '|' и не разделитель)
    * @param {string} line
    * @returns {boolean}
    */
   isPossibleTableRow(line) {
-    return /^\s*\|?[^|\n]+\|/.test(line) || /^\s*[^|\n]+\|/.test(line);
+    return line.includes('|') && !this.isSeparatorRow(line);
   }
 
   /**
@@ -51,7 +49,28 @@ class MdTableParser {
    * @returns {boolean}
    */
   isSeparatorRow(line) {
-    return /^\s*\|?[\s:-]+\|[\s:-]+\|?\s*$/.test(line) || /^\s*[\s:-]+\|[\s:-]+\s*$/.test(line);
+    // Удаляем начальные и конечные пробелы
+    const trimmed = line.trim();
+    if (!trimmed.includes('|')) return false;
+
+    // Нормализуем: добавляем пайпы по краям, если их нет
+    let normalized = trimmed;
+    if (!normalized.startsWith('|')) normalized = '|' + normalized;
+    if (!normalized.endsWith('|')) normalized = normalized + '|';
+
+    // Разбиваем на ячейки, удаляя внешние пайпы
+    const cells = normalized.slice(1, -1).split('|');
+    for (let cell of cells) {
+      const stripped = cell.trim();
+      // Пустая ячейка допустима (например, в начале или конце)
+      if (stripped === '') continue;
+      // Ячейка разделителя должна состоять только из :, -, пробелов
+      if (!/^[\s:;-]+$/.test(stripped)) return false;
+      // Убираем пробелы и проверяем, что остаток соответствует :?-+:?
+      const core = stripped.replace(/\s/g, '');
+      if (!/^:?-+:?$/.test(core)) return false;
+    }
+    return cells.length > 0;
   }
 
   /**
@@ -64,16 +83,14 @@ class MdTableParser {
     const separatorRow = rows[1];
     const bodyRows = rows.slice(2);
 
-    // Парсим заголовок
     const headerCells = this.parseRow(headerRow);
-    // Парсим выравнивание из строки разделителя
     const alignments = this.parseAlignments(separatorRow);
 
     // Формируем <thead>
     const thead = `<thead>\n<tr>\n${headerCells
       .map((cell, idx) => {
         const align = alignments[idx] ? ` style="text-align: ${alignments[idx]}"` : '';
-        return `<th${align}>${cell.trim()}</th>`;
+        return `<th${align} class="border-border border">${cell.trim()}</th>`;
       })
       .join('\n')}\n</tr>\n</thead>`;
 
@@ -81,10 +98,13 @@ class MdTableParser {
     const tbodyRows = bodyRows
       .map((row) => {
         const cells = this.parseRow(row);
+        // Если в строке меньше ячеек, чем в заголовке, дополняем пустыми
+        while (cells.length < headerCells.length) cells.push('');
         return `<tr>\n${cells
+          .slice(0, headerCells.length)
           .map((cell, idx) => {
             const align = alignments[idx] ? ` style="text-align: ${alignments[idx]}"` : '';
-            return `<td${align}>${cell.trim()}</td>`;
+            return `<td${align} class="border-border border">${cell.trim()}</td>`;
           })
           .join('\n')}\n</tr>`;
       })
@@ -99,14 +119,14 @@ class MdTableParser {
    * @returns {string[]}
    */
   parseRow(row) {
-    // Убираем начальный и конечный пробелы, а также возможный внешний пайп
     let trimmed = row.trim();
+    // Удаляем внешние пайпы, если они есть
     if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
     if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
 
-    // Разделяем по пайпу, но не внутри экранированного \|
+    // Разделяем по пайпу, не внутри экранированного \|
     const cells = trimmed.split(/(?<!\\)\|/g);
-    return cells.map((cell) => cell.replace(/\\\|/g, '|')); // восстанавливаем экранированные пайпы
+    return cells.map((cell) => cell.replace(/\\\|/g, '|').trim());
   }
 
   /**
@@ -115,14 +135,19 @@ class MdTableParser {
    * @returns {string[]} массив align: 'left', 'center', 'right' или null
    */
   parseAlignments(separatorRow) {
-    const cells = this.parseRow(separatorRow);
+    // Нормализуем разделитель так же, как в isSeparatorRow
+    let trimmed = separatorRow.trim();
+    if (!trimmed.startsWith('|')) trimmed = '|' + trimmed;
+    if (!trimmed.endsWith('|')) trimmed = trimmed + '|';
+    const cells = trimmed.slice(1, -1).split('|');
+
     return cells.map((cell) => {
-      const leftDash = /^:?-+:?$/.test(cell);
-      if (!leftDash) return null;
-      if (cell.startsWith(':') && cell.endsWith(':')) return 'center';
-      if (cell.endsWith(':')) return 'right';
-      if (cell.startsWith(':')) return 'left';
-      return null; // по умолчанию выравнивание не задаётся
+      const core = cell.trim().replace(/\s/g, '');
+      if (!core) return null;
+      if (core.startsWith(':') && core.endsWith(':')) return 'center';
+      if (core.endsWith(':')) return 'right';
+      if (core.startsWith(':')) return 'left';
+      return null;
     });
   }
 }

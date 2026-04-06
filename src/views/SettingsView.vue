@@ -17,7 +17,7 @@
         </div>
         <div class="grid grid-cols-2 gap-3">
           <button @click="saveKey" class="btn-default">Сохранить ключ</button>
-          <button @click="clearHistory" class="btn-error">Очистить историю (текущий чат)</button>
+          <button @click="clearHistory" class="btn-error">Уничтожить чаты</button>
         </div>
         <div
           v-if="chatStore.error && chatStore.error.includes('API ключ')"
@@ -47,8 +47,8 @@ const saveKey = () => {
 };
 
 const clearHistory = () => {
-  if (confirm('Удалить всю историю сообщений в текущем чате?')) {
-    chatStore.clearCurrentChatMessages();
+  if (confirm('Вы действительно хотите удалить все данные?')) {
+    chatStore.clearAllChats();
   }
 };
 </script>

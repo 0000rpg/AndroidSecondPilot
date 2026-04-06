@@ -165,7 +165,6 @@ class MarkdownParser {
             para.includes('<hr>') ||
             para.includes('<table>'))
         ) {
-          console.log(para);
           return para;
         }
 

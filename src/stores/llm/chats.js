@@ -57,6 +57,12 @@ export const useChatsStore = defineStore('chats', {
       const chat = this.currentChat;
       if (chat) chat.messages = [];
     },
+    // Удалить всё
+    clearAllChats() {
+      this.chats = [];
+      this.currentChatId = null;
+      this.createChat('Новый чат');
+    },
     setApiKey(key) {
       this.apiKey = key;
       this.error = null;

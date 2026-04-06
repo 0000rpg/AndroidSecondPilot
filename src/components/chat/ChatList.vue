@@ -94,7 +94,7 @@ const lastMessagePreview = (chat) => {
   if (!lastMsg) return 'Нет сообщений';
   const preview =
     lastMsg.content.length > 50 ? lastMsg.content.slice(0, 50) + '…' : lastMsg.content;
-  return `${lastMsg.role === 'user' ? '👤' : '🤖'} ${preview}`;
+  return `${lastMsg.role === 'user' ? '👤' : '🤖'} ${preview}`; // Так понятнее
 };
 
 const toggleMenu = (id) => {

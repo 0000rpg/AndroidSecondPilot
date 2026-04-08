@@ -17,7 +17,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/lmstudio': {
-        target: 'http://26.184.211.113:1234',
+        target: 'http://127.0.0.1:1234',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/lmstudio/, '/v1/chat/completions'),
         configure: (proxy, options) => {

@@ -8,7 +8,7 @@
     >
       <div class="flex h-full w-screen max-w-4xl flex-col">
         <!-- Область сообщений -->
-        <div class="custom-scrollbar h-full w-full overflow-y-auto p-4 pb-30">
+        <div class="custom-scrollbar z-5 h-full w-full overflow-y-auto p-4 pb-30">
           <div
             v-if="!chatsStore.currentChat || chatsStore.currentChat.messages?.length === 0"
             class="text-text-a text-center"

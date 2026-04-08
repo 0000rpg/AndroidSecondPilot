@@ -8,7 +8,7 @@ export const useLlmProviderStore = defineStore('llmProvider', {
     model: 'nvidia/nemotron-3-super-120b-a12b:free',
     // LMStudio
     lmstudioUrl: 'http://localhost:1234/v1/chat/completions',
-    lmstudioModel: 'gemma-3-4b-it-qat',
+    lmstudioModel: 'google/gemma-3-1b',
     // Общие поля статуса
     status: 'idle', // 'idle', 'loading', 'success', 'error'
     error: null,

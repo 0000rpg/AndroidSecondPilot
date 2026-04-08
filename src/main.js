@@ -3,19 +3,24 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import App from './App.vue';
 import router from './router';
-import { useAuthStore } from './stores/users/auth';
 import './assets/main.css';
 
-const pinia = createPinia();
+// Импорт сервисов (на будущее)
+import { storageRepository, nativeFacade /*, capacitorAdapter*/ } from '@/shared/services';
 
+// Определяем, какой фасад использовать (нативный или web)
+const activeNativeFacade = nativeFacade.isNative() ? capacitorAdapter : nativeFacade;
+
+const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 
 const app = createApp(App);
 
+// Предоставляем сервисы для использования в composables и компонентах
+app.provide('storageRepository', storageRepository);
+app.provide('nativeFacade', activeNativeFacade);
+
 app.use(pinia);
 app.use(router);
-
-// const authStore = useAuthStore()
-// authStore.loadFromStorage()
 
 app.mount('#app');

@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import LoginView from '@/views/LoginView.vue';
-import MainView from '@/views/MainView.vue';
-import { useAuthStore } from '@/stores/users/auth';
+import LoginView from '@/features/auth/views/LoginView.vue';
+import MainView from '@/features/todos/views/MainView.vue';
+import { useAuthStore } from '@/features/auth/stores/auth';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -20,31 +20,31 @@ const router = createRouter({
     {
       path: '/dev',
       name: 'dev',
-      component: () => import('@/views/DevPlayground.vue'),
+      component: () => import('@/features/dev/views/DevPlayground.vue'),
       meta: { requiresAuth: false },
     },
     {
       path: '/underConstruct',
       name: 'building',
-      component: () => import('@/views/UnderConstruct.vue'),
+      component: () => import('@/features/dev/views/CurrentPagePlayground.vue'),
       meta: { requiresAuth: false },
     },
     {
       path: '/admin',
       name: 'admin',
-      component: () => import('@/views/AdminPanel.vue'),
+      component: () => import('@/features/admin/views/AdminPanel.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/chat',
       name: 'chat',
-      component: () => import('@/views/ChatView.vue'),
+      component: () => import('@/features/chat/views/ChatView.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/settings',
       name: 'settings',
-      component: () => import('@/views/SettingsView.vue'),
+      component: () => import('@/features/settings/views/SettingsView.vue'),
       meta: { requiresAuth: true },
     },
   ],

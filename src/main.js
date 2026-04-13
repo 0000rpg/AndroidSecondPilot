@@ -9,7 +9,7 @@ import './assets/main.css';
 import { storageRepository, nativeFacade /*, capacitorAdapter*/ } from '@/shared/services';
 
 // Определяем, какой фасад использовать (нативный или web)
-const activeNativeFacade = nativeFacade.isNative() ? capacitorAdapter : nativeFacade;
+const activeNativeFacade = nativeFacade; // nativeFacade.isNative() ? capacitorAdapter : nativeFacade;
 
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);

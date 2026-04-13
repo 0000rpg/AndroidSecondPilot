@@ -1,13 +1,77 @@
 /**
- * Репозиторий для работы с localStorage
- * Абстрагирует прямое обращение к localStorage, позволяя в будущем заменить на Capacitor Storage или IndexedDB
+ * @fileoverview Storage system with native and web support.
  */
 
-class StorageRepository {
+/**
+ * @typedef {Object} IStorageService
+ * Интерфейс для любого сервиса локального хранения данных.
+ */
+
+// --- Адаптер Capacitor (Нативный) ---
+// На данный момент поддержку прекратил, всё через web
+class CapacitorStorageAdapter {
+  constructor() {} // Конструктор для явного создания экземпляра
+
   /**
-   * Сохранить значение в хранилище
-   * @param {string} key - ключ
-   * @param {any} value - значение (будет сериализовано в JSON)
+   * @param {string} key
+   * @param {*} value
+   * @returns {Promise<boolean>}
+   */
+  async setItem(key, value) {
+    console.log(`[Native] Setting ${key}`);
+    // await Capacitor.Plugins.Preferences.set({ key: key, value: JSON.stringify(value) });
+    return true;
+  }
+
+  /**
+   * @param {string} key
+   * @returns {Promise<*>}
+   */
+  async getItem(key) {
+    console.log(`[Native] Getting ${key}`);
+    // const result = await Capacitor.Plugins.Preferences.get({ key: key });
+    // return result.value ? JSON.parse(result.value) : null;
+    return null; // Заглушка для симуляции
+  }
+
+  /**
+   * @param {string} key
+   * @returns {Promise<boolean>}
+   */
+  async removeItem(key) {
+    console.log(`[Native] Removing ${key}`);
+    // await Capacitor.Plugins.Preferences.remove({ key: key });
+    return true;
+  }
+
+  /**
+   * @returns {Promise<boolean>}
+   */
+  async clear() {
+    console.log('[Native] Clearing all storage');
+    // await Capacitor.Plugins.Preferences.clear();
+    return true;
+  }
+
+  /**
+   * @param {string} key
+   * @returns {Promise<boolean>}
+   */
+  async has(key) {
+    // const result = await Capacitor.Plugins.Preferences.get({ key: key });
+    // return !!result.value;
+    return false; // Заглушка
+  }
+}
+
+// --- Адаптер LocalStorage (Web) ---
+class LocalStorageAdapter {
+  constructor() {}
+
+  /**
+   * @param {string} key
+   * @param {*} value
+   * @returns {boolean}
    */
   setItem(key, value) {
     try {
@@ -21,10 +85,9 @@ class StorageRepository {
   }
 
   /**
-   * Получить значение из хранилища
-   * @param {string} key - ключ
-   * @param {any} defaultValue - значение по умолчанию, если ключ отсутствует
-   * @returns {any} десериализованное значение или defaultValue
+   * @param {string} key
+   * @param {*} [defaultValue=null]
+   * @returns {*}
    */
   getItem(key, defaultValue = null) {
     try {
@@ -38,8 +101,8 @@ class StorageRepository {
   }
 
   /**
-   * Удалить ключ из хранилища
    * @param {string} key
+   * @returns {boolean}
    */
   removeItem(key) {
     try {
@@ -52,7 +115,7 @@ class StorageRepository {
   }
 
   /**
-   * Очистить всё хранилище
+   * @returns {boolean}
    */
   clear() {
     try {
@@ -65,7 +128,6 @@ class StorageRepository {
   }
 
   /**
-   * Проверить наличие ключа
    * @param {string} key
    * @returns {boolean}
    */
@@ -74,4 +136,24 @@ class StorageRepository {
   }
 }
 
-export const storageRepository = new StorageRepository();
+/**
+ * Фабрика для выбора и предоставления нужного адаптера, соблюдая DIP.
+ * Потребители будут запрашивать экземпляр через эту фабрику/сервис.
+ */
+export class StorageRepositoryFactory {
+  /**
+   * Определяет, какой адаптер использовать в зависимости от окружения.
+   * @returns {IStorageService} Экземпляр репозитория.
+   */
+  static getAdapter() {
+    // Проверка наличия Capacitor (нативный контекст)
+    if (typeof window !== 'undefined' && window.Capacitor) {
+      console.log('Используется CapacitorStorageAdapter.');
+      return new CapacitorStorageAdapter();
+    } else {
+      console.warn('Не обнаружен Capacitor, используется LocalStorageAdapter.');
+      return new LocalStorageAdapter();
+    }
+  }
+}
+// Экспортируем фабрику для использования в main.js и других местах.

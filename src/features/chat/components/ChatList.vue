@@ -9,7 +9,7 @@
           class="custom-scrollbar flex h-full max-w-xs min-w-2xs flex-col items-start overflow-x-hidden overflow-y-auto bg-transparent p-2 pr-4"
         >
           <div
-            v-for="chat in chatsStore.chats"
+            v-for="chat in chatsStore.allChats"
             :key="chat.id"
             class="bg-main border-border text-text hover:bg-main-a relative mb-2 w-full cursor-pointer rounded-2xl border p-2 transition-all"
             :class="{ 'border-theme border-2': chatsStore.currentChatId === chat.id }"

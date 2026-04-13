@@ -9,14 +9,12 @@ export function useAuthForm() {
   const router = useRouter();
   const authStore = useAuthStore();
   const accountsStore = useAccountsStore();
-
   // Состояние
   const state = ref('login');
   const username = ref('');
   const password = ref('');
   const confirmPassword = ref('');
   const errorMessage = ref('');
-
   // Ошибки валидации
   const usernameErrors = ref([]);
   const passwordErrors = ref([]);
@@ -30,14 +28,12 @@ export function useAuthForm() {
     inputModes.value.login = result.isValid ? 'correct' : 'error';
     return result.isValid;
   };
-
   const validatePasswordField = () => {
     const result = validatePassword(password.value);
     passwordErrors.value = result.errors;
     inputModes.value.password = result.isValid ? 'correct' : 'error';
     return result.isValid;
   };
-
   const validateConfirmPassword = () => {
     if (state.value !== 'register') return true;
     const isValid = password.value === confirmPassword.value;
@@ -45,7 +41,6 @@ export function useAuthForm() {
     inputModes.value.confirmPassword = isValid ? 'correct' : 'error';
     return isValid;
   };
-
   const validateRegistrationForm = () => {
     return validateUsernameField() && validatePasswordField() && validateConfirmPassword();
   };
@@ -53,7 +48,6 @@ export function useAuthForm() {
   // Сабмит
   const handleSubmit = async () => {
     errorMessage.value = '';
-
     if (state.value === 'login') {
       return handleLogin();
     } else {
@@ -61,33 +55,51 @@ export function useAuthForm() {
     }
   };
 
-  const handleLogin = () => {
-    const account = accountService.findAccount(username.value, password.value);
-    if (account) {
-      authStore.login(username.value);
+  const handleLogin = async () => {
+    // 1. Получаем контекст аккаунтов перед вызовом стора
+    const accountsList = accountsStore.accounts;
+
+    if (!accountsList || accountsList.length === 0) {
+      errorMessage.value = 'Невозможно войти: В системе нет зарегистрированных учетных записей.';
+      return false;
+    }
+
+    // 2. Вызываем метод login в сторе, передавая ВСЕ необходимые данные (username, password, context).
+    const success = authStore.login(username.value, password.value);
+
+    if (success) {
       router.push('/main');
       return true;
     } else {
-      errorMessage.value = 'Неверное имя пользователя или пароль';
+      errorMessage.value = 'Неверное имя пользователя или пароль.';
       return false;
     }
   };
 
-  const handleRegistration = () => {
+  const handleRegistration = async () => {
     if (!validateRegistrationForm()) return false;
 
-    if (accountService.usernameExists(username.value)) {
+    if (accountService.usernameExists(username.value, accountsStore.accounts)) {
       errorMessage.value = 'Пользователь с таким именем уже существует';
       return false;
     }
 
+    // Добавление аккаунта
     accountsStore.addAccount({
       username: username.value,
       password: password.value,
     });
-    authStore.login(username.value);
-    router.push('/main');
-    return true;
+
+    // Логин после регистрации (теперь передаем пароль)
+    const success = authStore.login(username.value, password.value);
+
+    if (success) {
+      router.push('/main');
+      return true;
+    } else {
+      errorMessage.value = 'Регистрация прошла успешно, но вход не удался.';
+      return false;
+    }
   };
 
   // UI конфигурация
@@ -96,7 +108,6 @@ export function useAuthForm() {
     { value: 'register', label: 'Регистрация' },
   ];
   const state_list = ref({ login: 'Войти', register: 'Зарегистрироваться' });
-
   return {
     state,
     username,

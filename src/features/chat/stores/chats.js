@@ -1,57 +1,91 @@
 import { defineStore } from 'pinia';
+// ИМПОРТ ИЗ ЦЕНТРАЛЬНОГО ФАЙЛА СЕРВИСОВ (index.js)
+import { storageRepository } from '@/shared/services';
+import { ChatManager } from '../managers/ChatManager';
 
+/**
+ * @fileoverview Менеджер бизнес-логики для управления состоянием чатов.
+ *
+ * Назначение: Инкапсулирует всю логику работы с массивом чатов, соблюдая SRP.
+ * Этот класс не является Pinia Store, а чистой утилитой, которую использует Store как Фасад.
+ */
 export const useChatsStore = defineStore('chats', {
   state: () => ({
-    chats: [],
-    currentChatId: null,
+    // Инициализируем chatManager с пустым массивом, чтобы избежать проблем при первом рендере
+    chatManager: new ChatManager([]),
+    currentChatId: null, // Явно управляемое состояние для Pinia Store
   }),
-  persist: true,
   getters: {
-    currentChat: (state) => state.chats.find((c) => c.id === state.currentChatId) || null,
+    // currentChat использует state.currentChatId для поиска в chatManager.chats
+    currentChat: (state) =>
+      state.chatManager.chats.find((c) => c.id === state.currentChatId) || null,
+    allChats: (state) => {
+      return [...state.chatManager.chats];
+    },
   },
   actions: {
-    init() {
-      if (this.chats.length === 0) {
-        this.createChat('Новый чат');
+    async init() {
+      // 1. Попытка загрузить данные из хранилища с обработкой ошибок
+      let savedChats = null;
+      try {
+        savedChats = await storageRepository.getItem('chat_history');
+      } catch (e) {
+        console.error('Ошибка при чтении истории чатов:', e);
       }
-      if (!this.currentChatId && this.chats.length) {
-        this.currentChatId = this.chats[0].id;
-      }
-    },
-    createChat(name = null) {
-      const id = Date.now().toString();
-      const chatName = name || `Чат ${this.chats.length + 1}`;
-      const newChat = {
-        id,
-        name: chatName,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      this.chats.push(newChat);
-      this.currentChatId = id;
-      return id;
-    },
-    deleteChat(id) {
-      const index = this.chats.findIndex((c) => c.id === id);
-      if (index === -1) return;
-      this.chats.splice(index, 1);
-      if (this.currentChatId === id) {
-        this.currentChatId = this.chats.length ? this.chats[0].id : null;
+      if (Array.isArray(savedChats) && savedChats.length > 0) {
+        this.chatManager.chats = savedChats; // Загружаем чаты в менеджер
+        // Устанавливаем текущий ID на основе сохраненных данных
+        this.currentChatId = savedChats[0].id || null;
+      } else {
+        // Если ничего не сохранено, инициализируем с нуля
+        const initialData = this.chatManager.init();
+        this.chatManager.chats = initialData.initialChats; // Обновляем внутренний массив
+        this.currentChatId = initialData.initialChatId; // Устанавливаем ID в Pinia state
       }
     },
-    renameChat(id, newName) {
-      const chat = this.chats.find((c) => c.id === id);
-      if (chat) chat.name = newName.trim() || 'Без названия';
+    async createChat(name = null) {
+      // 1. Создаем чат через менеджер, который добавляет его в internal array
+      const newId = this.chatManager.createChat(name);
+      // 2. Обновляем state.currentChatId и сохраняем список чатов в хранилище
+      this.currentChatId = newId;
+      await this.saveChats();
+      return newId;
+    },
+    async deleteChat(id) {
+      // 1. Вызываем менеджер для получения нового состояния (массив без удаленного элемента и новый active ID)
+      const result = this.chatManager.deleteChat(id);
+      // 2. Применяем изменения к состоянию Store и сохраняем
+      if (result) {
+        this.chatManager.chats = result.updatedChats;
+        this.currentChatId = result.newActiveId;
+        await this.saveChats();
+      }
+      return result?.newActiveId;
+    },
+    async renameChat(id, newName) {
+      this.chatManager.renameChat(id, newName);
+      await this.saveChats();
     },
     setCurrentChat(id) {
-      if (this.chats.find((c) => c.id === id)) {
+      // Проверяем валидность ID и обновляем state.currentChatId только если чат существует в менеджере
+      if (this.chatManager.chats.find((c) => c.id === id)) {
         this.currentChatId = id;
+        // При смене чата, мы просто обновляем ID и сохраняем список, чтобы обеспечить консистентность
+        this.saveChats();
       }
     },
-    clearAllChats() {
-      this.chats = [];
-      this.currentChatId = null;
-      this.createChat('Новый чат');
+    async clearAllChats() {
+      // 1. Вызываем менеджер для получения нового состояния (массив с одним новым элементом)
+      const result = this.chatManager.clearAllChats();
+      // 2. Применяем изменения к состоянию Store и сохраняем
+      this.chatManager.chats = result.updatedChats;
+      this.currentChatId = result.newActiveId;
+      await this.saveChats();
+    },
+    // --- Методы сохранения состояния (Persistence) ---
+    async saveChats() {
+      const chatsToSave = this.chatManager.chats.map((c) => ({ ...c })); // Глубокая копия для сохранения
+      await storageRepository.setItem('chat_history', chatsToSave);
     },
   },
 });

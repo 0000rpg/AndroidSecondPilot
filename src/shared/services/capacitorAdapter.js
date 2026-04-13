@@ -1,4 +1,5 @@
 /**
+ * @fileoverview Capacitor adapter to native functions.
  * Адаптер для Capacitor – реализация нативных возможностей через плагины Capacitor.
  * Используется, когда приложение запущено на устройстве (Android/iOS).
  * Для работы требуется установка плагинов:

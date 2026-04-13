@@ -33,20 +33,16 @@
 
 <script setup>
 import { defineProps, defineEmits } from 'vue';
-
 defineProps({
   accounts: {
     type: Array,
     required: true,
   },
 });
-
 const emit = defineEmits(['edit', 'delete']);
-
 const onEdit = (account) => {
   emit('edit', account);
 };
-
 const onDelete = (id, username) => {
   emit('delete', id, username);
 };

@@ -30,7 +30,7 @@
 
         <!-- Поле ввода -->
         <div
-          class="fixed bottom-0 left-1/2 w-full max-w-4xl -translate-x-1/2 bg-transparent p-4 shadow-lg"
+          class="fixed bottom-0 left-1/2 z-10 w-full max-w-4xl -translate-x-1/2 bg-transparent p-4 shadow-lg"
         >
           <div class="flex w-full gap-2">
             <textarea
@@ -56,15 +56,15 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useChatsStore } from '../stores/chats';
-import { useMessagesStore } from '../stores/messages';
+import { MessageSenderService } from '../services/MessageSenderService'; // Импортируем новый сервис
 import { useChatInput } from '../composables/useChatInput';
 import ChatList from '../components/ChatList.vue';
 import ChatMessage from '../components/ChatMessage.vue';
 
 const chatsStore = useChatsStore();
-const messagesStore = useMessagesStore();
+const messagesStore = new MessageSenderService();
 const { userInput, send } = useChatInput();
 
 onMounted(() => {

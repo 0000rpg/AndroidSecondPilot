@@ -1,6 +1,6 @@
 <template>
-  <div class="fixed top-16 left-0 h-[calc(100vh-12.5rem)]" :class="showChatList ? 'z-10' : 'z-1'">
-    <div class="relative h-full">
+  <div class="fixed top-16 left-0 h-[calc(100vh-12.5rem)]">
+    <div class="relative h-full" :class="showChatList ? 'z-10' : 'z-1'">
       <div
         class="h-full transition-all duration-300 ease-out"
         :class="showChatList ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'"

@@ -90,11 +90,16 @@ const editingId = ref(null);
 const editName = ref('');
 
 const lastMessagePreview = (chat) => {
-  const lastMsg = chat.messages?.[chat.messages.length - 1];
-  if (!lastMsg) return 'Нет сообщений';
+  if (!getLastMessage(chat)) return 'Нет сообщений';
   const preview =
-    lastMsg.content.length > 50 ? lastMsg.content.slice(0, 50) + '…' : lastMsg.content;
-  return `${lastMsg.role === 'user' ? '👤' : '🤖'} ${preview}`;
+    getLastMessage(chat).content.length > 50
+      ? getLastMessage(chat).content.slice(0, 50) + '…'
+      : getLastMessage(chat).content;
+  return `${getLastMessage(chat).role === 'user' ? '👤' : '🤖'} ${preview}`;
+};
+
+const getLastMessage = (chat) => {
+  return chat.messages?.[chat.messages.length - 1];
 };
 
 const toggleMenu = (id) => {

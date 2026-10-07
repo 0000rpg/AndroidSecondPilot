@@ -44,22 +44,10 @@ export const useMessagesStore = defineStore('messages', {
       this.streaming = true;
       this.sendError = null;
 
-      // Добавляем сообщение пользователя
-      const userMessage = { role: 'user', content: content.trim() };
-      if (!chat.messages) chat.messages = [];
-      chat.messages.push(userMessage);
-      chat.updatedAt = new Date().toISOString();
-
-      // Плейсхолдер ассистента
-      const assistantPlaceholder = { role: 'assistant', content: '', reasoning_details: null };
-      chat.messages.push(assistantPlaceholder);
-      const assistantIndex = chat.messages.length - 1;
-
-      // История для API – все сообщения кроме последнего пустого ассистента
-      const apiMessages = chat.messages
-        .slice(0, -1)
-        .filter((m) => m.role !== 'system')
-        .map((m) => ({ role: m.role, content: m.content }));
+      const { assistantPlaceholder, assistantIndex, apiMessages } = this._prepareMessagesForRequest(
+        chat,
+        content
+      );
 
       try {
         let fullContent = '';
@@ -110,6 +98,31 @@ export const useMessagesStore = defineStore('messages', {
       const chatsStore = useChatsStore();
       const chat = chatsStore.currentChat;
       if (chat) chat.messages = [];
+    },
+
+    _prepareMessagesForRequest(chat, content) {
+      // Добавляем сообщение пользователя
+      const userMessage = { role: 'user', content: content.trim() };
+      if (!chat.messages) chat.messages = [];
+      chat.messages.push(userMessage);
+      chat.updatedAt = new Date().toISOString();
+
+      // Плейсхолдер ассистента
+      const assistantPlaceholder = {
+        role: 'assistant',
+        content: '',
+        reasoning_details: null,
+      };
+      chat.messages.push(assistantPlaceholder);
+      const assistantIndex = chat.messages.length - 1;
+
+      // История для API – все сообщения кроме последнего пустого ассистента
+      const apiMessages = chat.messages
+        .slice(0, -1)
+        .filter((m) => m.role !== 'system')
+        .map((m) => ({ role: m.role, content: m.content }));
+
+      return { assistantPlaceholder, assistantIndex, apiMessages };
     },
   },
 });

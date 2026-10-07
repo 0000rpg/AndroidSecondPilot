@@ -238,26 +238,14 @@ class MarkdownParser {
   parse(markdown) {
     if (!markdown) return '';
 
-    let html = markdown;
+    const htmlWithCodeBlocks = this.inlineProcessor.processCodeBlocks(markdown);
+    const htmlWithInlineRules = this.inlineProcessor.processInlineRules(htmlWithCodeBlocks);
+    const htmlWithTables = this.tableParser.parse(htmlWithInlineRules);
+    const htmlWithULists = this.structureProcessor.handleUnorderedList(htmlWithTables);
+    const htmlWithOLists = this.structureProcessor.handleUnorderedList(htmlWithULists);
+    const htmlWithParagraphs = this.structureProcessor.processParagraphs(htmlWithOLists);
 
-    // 1. Обработка блоков кода (Code Blocks) — должно быть первым, чтобы не испортить синтаксис
-    html = this.inlineProcessor.processCodeBlocks(html);
-
-    // 2. Обработка инлайн- и блочных элементов (Заголовки, Ссылки, Блокквоты, etc.)
-    html = this.inlineProcessor.processInlineRules(html);
-
-    // 3. Обработка таблиц (Table)
-    html = this.tableParser.parse(html);
-
-    // 4. Обработка списков (Lists) — должна происходить после обработки блоков, но до параграфов
-    html = this.structureProcessor.handleUnorderedList(html);
-    html = this.structureProcessor.handleOrderedList(html);
-
-    // 5. Обработка параграфов (Paragraphs) — последний этап структурирования текста
-    html = this.structureProcessor.processParagraphs(html);
-
-    // Финальная очистка: удаление лишних пустых строк и нормализация переносов
-    return html.replace(/\n{2,}/g, '\n').trim();
+    return htmlWithParagraphs.replace(/\n{2,}/g, '\n').trim();
   }
 }
 

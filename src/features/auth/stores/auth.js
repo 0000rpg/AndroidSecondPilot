@@ -15,16 +15,13 @@ export const useAuthStore = defineStore('auth', {
      * @param {string} password - Пароль пользователя.
      */
     login(username, password) {
-      // 1. Получаем полный список аккаунтов из хранилища (контекст для сервиса)
-      const accountsList = useAccountsStore().accounts;
-
-      if (!accountsList || accountsList.length === 0) {
+      if (!useAccountsStore().accounts || useAccountsStore().accounts.length === 0) {
         console.error('Невозможно войти: Список учетных записей пуст.');
         return false; // Возвращаем явный флаг ошибки
       }
 
-      // 2. Вызываем сервис, передавая ему контекст (список аккаунтов), логин и пароль.
-      const result = authService.login(username, password, accountsList);
+      // Вызываем сервис, передавая ему контекст (список аккаунтов), логин и пароль.
+      const result = authService.login(username, password, useAccountsStore().accounts);
 
       if (result && result.success && result.user) {
         this.user = result.user.username;

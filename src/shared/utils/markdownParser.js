@@ -127,22 +127,9 @@ class StructureProcessor {
   }
 
   /**
-   * Обрабатывает маркированные и нумерованные списки.
-   * @param {string} text - Текст, содержащий потенциальные списки.
-   * @returns {string} Текст с обработанными списками.
-   */
-  processLists(text) {
-    // 1. Обработка маркированных списков (UL)
-    let result = this._handleUnorderedList(text);
-
-    // 2. Обработка нумерованных списков (OL) на результате UL
-    return this._handleOrderedList(result);
-  }
-
-  /**
    * Внутренняя логика для обработки маркированных списков.
    */
-  _handleUnorderedList(text) {
+  handleUnorderedList(text) {
     let result = [];
     const lines = text.split('\n');
     let inUl = false;
@@ -174,7 +161,7 @@ class StructureProcessor {
   /**
    * Внутренняя логика для обработки нумерованных списков.
    */
-  _handleOrderedList(text) {
+  handleOrderedList(text) {
     let finalResult = [];
     const lines2 = text.split('\n');
     let inOl = false;
@@ -263,7 +250,8 @@ class MarkdownParser {
     html = this.tableParser.parse(html);
 
     // 4. Обработка списков (Lists) — должна происходить после обработки блоков, но до параграфов
-    html = this.structureProcessor.processLists(html);
+    html = this.structureProcessor.handleUnorderedList(html);
+    html = this.structureProcessor.handleOrderedList(html);
 
     // 5. Обработка параграфов (Paragraphs) — последний этап структурирования текста
     html = this.structureProcessor.processParagraphs(html);

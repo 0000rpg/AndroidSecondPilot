@@ -48,8 +48,9 @@ export function useAdminPanel() {
     modalError.value = '';
 
     const existing = accountsStore.accounts.find((acc) => acc.username === editForm.username);
+    const isUsernameTocken = existing && (modalMode.value === 'add' || existing.id !== editForm.id);
 
-    if (existing && (modalMode.value === 'add' || existing.id !== editForm.id)) {
+    if (isUsernameTocken) {
       modalError.value = 'Пользователь с таким именем уже существует';
       return;
     }

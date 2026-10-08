@@ -18,10 +18,5 @@ export function useChatInput() {
     await messagesStore.sendMessage(message);
   };
 
-  return {
-    userInput,
-    send,
-    isLoading: messagesStore.streaming,
-    error: messagesStore.sendError,
-  };
+  return { userInput, send };
 }

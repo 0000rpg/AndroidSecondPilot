@@ -22,10 +22,13 @@ export class AdminService {
   /**
    * Проверяет уникальность имени пользователя в списке.
    * @param {string} username - Имя для проверки.
+   * @param {number|string|null} excludeId - ID, который исключается из проверки (для режима edit).
    * @returns {boolean} true, если имя свободно.
    */
-  isUsernameUnique(username) {
-    return !this.accounts.some((acc) => acc.username === username);
+  isUsernameUnique(username, excludeId = null) {
+    return !this.accounts.some(
+      (acc) => acc.username === username && acc.id !== excludeId
+    );
   }
 
   /**

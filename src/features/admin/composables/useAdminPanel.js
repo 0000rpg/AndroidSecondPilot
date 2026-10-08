@@ -2,6 +2,7 @@ import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAccountsStore } from '@/features/auth/stores/accounts';
 import { useAuthStore } from '@/features/auth/stores/auth';
+import { AdminService } from '../services/adminService';
 
 export function useAdminPanel() {
   const router = useRouter();
@@ -47,10 +48,10 @@ export function useAdminPanel() {
   const saveAccount = () => {
     modalError.value = '';
 
-    const existing = accountsStore.accounts.find((acc) => acc.username === editForm.username);
-    const isUsernameTocken = existing && (modalMode.value === 'add' || existing.id !== editForm.id);
+    const service = new AdminService(accountsStore.accounts, authStore);
+    const excludeId = modalMode.value === 'edit' ? editForm.id : null;
 
-    if (isUsernameTocken) {
+    if (!service.isUsernameUnique(editForm.username, excludeId)) {
       modalError.value = 'Пользователь с таким именем уже существует';
       return;
     }

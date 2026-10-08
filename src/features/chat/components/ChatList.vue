@@ -82,6 +82,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useChatsStore } from '../stores/chats';
+import { ChatExtension } from '../models/ChatExtension';
 
 const chatsStore = useChatsStore();
 const showChatList = ref(false);
@@ -89,18 +90,7 @@ const activeMenu = ref(null);
 const editingId = ref(null);
 const editName = ref('');
 
-const lastMessagePreview = (chat) => {
-  if (!getLastMessage(chat)) return 'Нет сообщений';
-  const preview =
-    getLastMessage(chat).content.length > 50
-      ? getLastMessage(chat).content.slice(0, 50) + '…'
-      : getLastMessage(chat).content;
-  return `${getLastMessage(chat).role === 'user' ? '👤' : '🤖'} ${preview}`;
-};
-
-const getLastMessage = (chat) => {
-  return chat.messages?.[chat.messages.length - 1];
-};
+const lastMessagePreview = (chat) => new ChatExtension(chat).getPreview();
 
 const toggleMenu = (id) => {
   activeMenu.value = activeMenu.value === id ? null : id;

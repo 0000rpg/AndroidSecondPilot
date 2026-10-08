@@ -24,10 +24,10 @@
         <div v-if="llmStore.provider === 'openrouter'">
           <label>API ключ OpenRouter</label>
           <SmartInput
-            v-model="apiKeyInput"
+            v-model="llmStore.apiKey"
             type="password"
             placeholder="sk-or-v1-..."
-            :mode="apiKeyInput ? 'correct' : 'default'"
+            :mode="llmStore.apiKey ? 'correct' : 'default'"
           />
           <div class="text-text-a mt-1 text-xs">Ключ хранится локально в браузере</div>
           <div class="mt-3">
@@ -74,5 +74,5 @@
 import { useSettings } from '../composables/useSettings';
 import SmartInput from '@/shared/ui/SmartInput.vue';
 
-const { llmStore, apiKeyInput, saveSuccess, saveKey, clearHistory } = useSettings();
+const { llmStore, saveSuccess, saveKey, clearHistory } = useSettings();
 </script>

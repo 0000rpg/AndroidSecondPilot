@@ -10,16 +10,9 @@ export function useSettings() {
   const llmStore = useLlmProviderStore();
   const chatsStore = useChatsStore();
 
-  // Состояние, связанное только с UI/вводом данных
-  const apiKeyInput = ref(llmStore.apiKey);
   const saveSuccess = ref(false);
 
-  /**
-   * Сохраняет API ключ LLM и обновляет локальное состояние.
-   */
   const saveKey = () => {
-    // 1. Вызов сервиса/стора для бизнес-логики сохранения
-    llmStore.setApiKey(apiKeyInput.value);
     saveSuccess.value = true;
     setTimeout(() => (saveSuccess.value = false), 2000);
   };
@@ -34,11 +27,5 @@ export function useSettings() {
     }
   };
 
-  return {
-    llmStore,
-    apiKeyInput,
-    saveSuccess,
-    saveKey,
-    clearHistory,
-  };
+  return { llmStore, saveSuccess, saveKey, clearHistory };
 }

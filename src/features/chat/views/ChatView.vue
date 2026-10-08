@@ -9,23 +9,20 @@
       <div class="flex h-full w-screen max-w-4xl flex-col">
         <!-- Область сообщений -->
         <div class="custom-scrollbar h-full w-full overflow-y-auto p-4 pb-30">
-          <div
-            v-if="!chatsStore.currentChat || chatsStore.currentChat.messages?.length === 0"
-            class="text-text-a text-center"
-          >
-            Нет сообщений. Начните диалог!
-          </div>
-          <ChatMessage
-            v-for="(msg, idx) in chatsStore.currentChat?.messages"
-            :key="idx"
-            :message="msg"
-          />
-          <div v-if="messagesStore.streaming" class="text-text-a mt-2 text-center">
-            Ассистент печатает...
-          </div>
-          <div v-if="messagesStore.sendError" class="text-error mt-2 text-center">
-            {{ messagesStore.sendError }}
-          </div>
+    <div v-if="messagesStore.currentMessages.length === 0" class="text-text-a text-center">
+      Нет сообщений. Начните диалог!
+    </div>
+    <ChatMessage
+      v-for="(msg, idx) in messagesStore.currentMessages"
+      :key="idx"
+      :message="msg"
+    />
+    <div v-if="messagesStore.streaming" class="text-text-a mt-2 text-center">
+      Ассистент печатает...
+    </div>
+    <div v-if="messagesStore.sendError" class="text-error mt-2 text-center">
+      {{ messagesStore.sendError }}
+    </div>
         </div>
 
         <!-- Поле ввода -->
@@ -56,15 +53,15 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted } from 'vue';
 import { useChatsStore } from '../stores/chats';
-import { MessageSenderService } from '../services/MessageSenderService'; // Импортируем новый сервис
+import { useMessagesStore } from '../stores/messages';
 import { useChatInput } from '../composables/useChatInput';
 import ChatList from '../components/ChatList.vue';
 import ChatMessage from '../components/ChatMessage.vue';
 
 const chatsStore = useChatsStore();
-const messagesStore = new MessageSenderService();
+const messagesStore = useMessagesStore();
 const { userInput, send } = useChatInput();
 
 onMounted(() => {

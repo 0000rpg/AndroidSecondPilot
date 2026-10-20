@@ -13,19 +13,22 @@ import { useAuthStore } from '@/features/auth/stores/auth';
  * @param {object} from - Текущий роут.
  * @param {Function} next - Функция перехода.
  */
+const isAuthenticatedRedirect = (to, authStore) =>
+  authStore.isAuthenticated && to.path === '/';
+
+const isUnauthorizedAccess = (to, authStore) =>
+  to.meta.requiresAuth && !authStore.isAuthenticated;
+
+const redirectToMain = (next) => next('/main');
+const redirectToLogin = (next) => next('/');
+const allowNavigation = (next) => next();
+
 const authGuard = (to, from, next) => {
-  // Используем useAuthStore() внутри гварда для доступа к состоянию Pinia
   const authStore = useAuthStore();
 
-  if (authStore.isAuthenticated && to.path === '/') {
-    console.log('Пользователь авторизован и перенаправляется на /main');
-    next('/main');
-  } else if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    console.warn(`Доступ к ${to.name} запрещен. Перенаправление на логин.`);
-    next('/');
-  } else {
-    next();
-  }
+  if (isAuthenticatedRedirect(to, authStore)) return redirectToMain(next);
+  if (isUnauthorizedAccess(to, authStore)) return redirectToLogin(next);
+  return allowNavigation(next);
 };
 
 const router = createRouter({

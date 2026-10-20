@@ -11,12 +11,12 @@ export function useChatInput() {
   /**
    * Обработчик отправки сообщения. Вызывает метод sendMessage в хранилище сообщений.
    */
-  const send = async () => {
+  const sendMessage = async () => {
     if (!userInput.value.trim() || messagesStore.streaming) return;
     const message = userInput.value;
     userInput.value = '';
     await messagesStore.sendMessage(message);
   };
 
-  return { userInput, send };
+  return { userInput, sendMessage };
 }

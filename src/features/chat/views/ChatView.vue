@@ -35,10 +35,10 @@
               class="bg-main border-border text-text w-full rounded-2xl border p-2 focus:outline-none"
               rows="2"
               placeholder="Введите сообщение..."
-              @keydown.ctrl.enter="send"
+              @keydown.ctrl.enter="sendMessage"
             ></textarea>
             <button
-              @click="send"
+              @click="sendMessage"
               :disabled="!userInput.trim() || messagesStore.streaming"
               class="btn-default w-auto! px-6"
             >
@@ -62,7 +62,7 @@ import ChatMessage from '../components/ChatMessage.vue';
 
 const chatsStore = useChatsStore();
 const messagesStore = useMessagesStore();
-const { userInput, send } = useChatInput();
+const { userInput, sendMessage } = useChatInput();
 
 onMounted(() => {
   chatsStore.init();

@@ -36,19 +36,9 @@ export const useLlmProviderStore = defineStore('llmProvider', {
       this.provider = provider;
       this.error = null;
     },
-    setApiKey(key) {
-      this.apiKey = key;
-      this.error = null;
-    },
-    setModel(model) {
-      this.model = model;
-    },
-    setLmstudioUrl(url) {
-      this.lmstudioUrl = url;
-      this.error = null;
-    },
-    setLmstudioModel(model) {
-      this.lmstudioModel = model;
+    setConfigField(field, value, clearError = true) {
+      this[field] = value;
+      if (clearError) this.error = null;
     },
     setStatus(status, errorMsg = null) {
       this.status = status;

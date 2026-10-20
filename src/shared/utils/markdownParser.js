@@ -130,30 +130,24 @@ class StructureProcessor {
    * Внутренняя логика для обработки маркированных списков.
    */
   handleUnorderedList(text) {
-    let result = [];
+    const result = [];
     const lines = text.split('\n');
-    let inUl = false;
+    let i = 0;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const isUlItem = this.ulRegex.test(line);
-
-      if (isUlItem && !inUl) {
-        result.push('<ul class="pl-2">');
-        inUl = true;
-        // Добавляем первый элемент списка, используя чистый текст после маркера
-        result.push(`<li>${line.substring(2)}</li>`);
-      } else if (isUlItem && inUl) {
-        result.push(`<li>${line.substring(2)}</li>`);
-      } else if (!isUlItem && inUl) {
-        result.push('</ul>');
-        inUl = false;
-        result.push(line); // Текущая строка не является частью списка
-      } else {
-        result.push(line);
+    while (i < lines.length) {
+      if (!this.ulRegex.test(lines[i])) {
+        result.push(lines[i]);
+        i++;
+        continue;
       }
+
+      result.push('<ul class="pl-2">');
+      while (i < lines.length && this.ulRegex.test(lines[i])) {
+        result.push(`<li>${lines[i].substring(2)}</li>`);
+        i++;
+      }
+      result.push('</ul>');
     }
-    if (inUl) result.push('</ul>');
 
     return result.join('\n');
   }
@@ -162,34 +156,27 @@ class StructureProcessor {
    * Внутренняя логика для обработки нумерованных списков.
    */
   handleOrderedList(text) {
-    let finalResult = [];
-    const lines2 = text.split('\n');
-    let inOl = false;
-    let curNum = 1;
+    const result = [];
+    const lines = text.split('\n');
+    let i = 0;
 
-    for (let i = 0; i < lines2.length; i++) {
-      const line = lines2[i];
-      const isOlItem = this.olRegex.test(line);
-
-      if (isOlItem && !inOl) {
-        finalResult.push('<ol class="pl-2">');
-        inOl = true;
-        // Используем текущий номер и очищенный текст
-        finalResult.push(`<li>${curNum++}) ${line.replace(this.olRegex, '').trim()}</li>`);
-      } else if (isOlItem && inOl) {
-        finalResult.push(`<li>${curNum++}) ${line.replace(this.olRegex, '').trim()}</li>`);
-      } else if (!isOlItem && inOl) {
-        finalResult.push('</ol>');
-        inOl = false;
-        finalResult.push(line); // Текущая строка не является частью списка
-        curNum = 1;
-      } else {
-        finalResult.push(line);
+    while (i < lines.length) {
+      if (!this.olRegex.test(lines[i])) {
+        result.push(lines[i]);
+        i++;
+        continue;
       }
-    }
-    if (inOl) finalResult.push('</ol>');
 
-    return finalResult.join('\n');
+      result.push('<ol class="pl-2">');
+      let curNum = 1;
+      while (i < lines.length && this.olRegex.test(lines[i])) {
+        result.push(`<li>${curNum++}) ${lines[i].replace(this.olRegex, '').trim()}</li>`);
+        i++;
+      }
+      result.push('</ol>');
+    }
+
+    return result.join('\n');
   }
 
   /**

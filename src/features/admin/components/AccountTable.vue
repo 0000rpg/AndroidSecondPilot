@@ -20,7 +20,7 @@
             Edit
           </button>
           <button
-            @click="onDelete(account.id, account.username)"
+            @click="onDelete(account)"
             class="btn-error mb-1 w-full py-1 text-base"
           >
             Delete
@@ -43,7 +43,7 @@ const emit = defineEmits(['edit', 'delete']);
 const onEdit = (account) => {
   emit('edit', account);
 };
-const onDelete = (id, username) => {
-  emit('delete', id, username);
+const onDelete = (account) => {
+  emit('delete', account);
 };
 </script>

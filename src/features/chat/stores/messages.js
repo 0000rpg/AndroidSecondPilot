@@ -17,7 +17,7 @@ export const useMessagesStore = defineStore('messages', {
   getters: {
     currentMessages: () => {
       const chatsStore = useChatsStore();
-      return chatsStore.currentChat?.messages || [];
+      return chatsStore.currentChat.messages;
     },
   },
   actions: {
@@ -25,7 +25,7 @@ export const useMessagesStore = defineStore('messages', {
       const chatsStore = useChatsStore();
       const providerStore = useLlmProviderStore();
       const chat = chatsStore.currentChat;
-      if (!chat || !content.trim()) return;
+      if (!content.trim() || chat.isNull?.()) return;
 
       // 1. Проверка конфигурации и инициализация LLMService
       let llmService;

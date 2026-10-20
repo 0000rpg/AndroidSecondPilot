@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 // ИМПОРТ ИЗ ЦЕНТРАЛЬНОГО ФАЙЛА СЕРВИСОВ (index.js)
 import { storageRepository } from '@/shared/services';
 import { ChatManager } from '../managers/ChatManager';
+import { nullChat } from '../models/ChatExtension';
 
 /**
  * @fileoverview Менеджер бизнес-логики для управления состоянием чатов.
@@ -18,7 +19,7 @@ export const useChatsStore = defineStore('chats', {
   getters: {
     // currentChat использует state.currentChatId для поиска в chatManager.chats
     currentChat: (state) =>
-      state.chatManager.chats.find((c) => c.id === state.currentChatId) || null,
+      state.chatManager.chats.find((c) => c.id === state.currentChatId) || nullChat,
     allChats: (state) => {
       return [...state.chatManager.chats];
     },

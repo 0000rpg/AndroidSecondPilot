@@ -3,9 +3,25 @@
  * Инкапсулирует методы, которые должны были бы располагаться в самом классе Chat,
  * однако исходный объект чата — plain object и недоступен для модификации.
  */
+export class NullChat {
+  constructor() {
+    this.id = null;
+    this.name = 'Нет чата';
+    this.messages = [];
+    this.createdAt = null;
+    this.updatedAt = null;
+  }
+
+  isNull() {
+    return true;
+  }
+}
+
+export const nullChat = new NullChat();
+
 export class ChatExtension {
   constructor(chat) {
-    this._chat = chat;
+    this._chat = chat || nullChat;
   }
 
   get id() {
@@ -15,7 +31,7 @@ export class ChatExtension {
     return this._chat.name;
   }
   get messages() {
-    return this._chat.messages || [];
+    return this._chat.messages;
   }
 
   getLastMessage() {
@@ -28,5 +44,9 @@ export class ChatExtension {
     if (!msg) return 'Нет сообщений';
     const text = msg.content.length > 50 ? msg.content.slice(0, 50) + '…' : msg.content;
     return `${msg.role === 'user' ? '👤' : '🤖'} ${text}`;
+  }
+
+  isNull() {
+    return this._chat.isNull?.() ?? false;
   }
 }

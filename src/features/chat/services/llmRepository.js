@@ -177,6 +177,12 @@ class LmStudioProvider extends BaseLlmProvider {
  * Класс-фасад, координирующий взаимодействие с LLM провайдерами.
  * Отвечает за общую логику обработки ошибок и таймаутов.
  */
+const providerConstructors = {
+  openrouter: OpenRouterProvider,
+  lmstudio: LmStudioProvider,
+  openai: LmStudioProvider,
+};
+
 class LlmRepository {
   constructor() {}
 
@@ -188,21 +194,15 @@ class LlmRepository {
    */
   async sendStreamingRequest(config, messages) {
     const controller = new AbortController();
-    // Устанавливаем таймаут на 120 секунд (было 120000 мс)
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-    let provider;
     try {
-      // Фабричный метод выбора провайдера
-      if (config.type === 'openrouter') {
-        provider = new OpenRouterProvider(config);
-      } else if (config.type === 'lmstudio' || config.type === 'openai') {
-        provider = new LmStudioProvider(config);
-      } else {
+      const Provider = providerConstructors[config.type];
+      if (!Provider) {
         throw new Error(`Неподдерживаемый тип провайдера: ${config.type}`);
       }
 
-      // Выполнение запроса через выбранную стратегию
+      const provider = new Provider(config);
       const response = await provider.sendRequest(messages);
       const streamGenerator = await provider.getStream(response);
       return streamGenerator;
@@ -214,7 +214,6 @@ class LlmRepository {
       if (err.message.includes('Failed to fetch')) {
         throw new Error('Ошибка сети. Проверьте подключение.');
       }
-      // Перебрасываем ошибку, если она не связана с сетью/таймаутом
       throw err;
     } finally {
       clearTimeout(timeoutId);

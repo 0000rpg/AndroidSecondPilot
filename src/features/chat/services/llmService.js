@@ -1,5 +1,29 @@
 import { llmRepository } from './llmRepository';
 
+const providerConfigBuilders = {
+  openrouter: (config) => {
+    if (!config?.apiKey || !config?.model) {
+      throw new Error("OpenRouter provider requires 'apiKey' and 'model'.");
+    }
+    return {
+      type: 'openrouter',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      apiKey: config.apiKey,
+      model: config.model,
+    };
+  },
+  lmstudio: (config) => {
+    if (!config?.lmstudioUrl || !config?.lmstudioModel) {
+      throw new Error("LMStudio provider requires 'lmstudioUrl' and 'lmstudioModel'.");
+    }
+    return {
+      type: 'lmstudio',
+      url: config.lmstudioUrl,
+      model: config.lmstudioModel,
+    };
+  },
+};
+
 /**
  * Сервис-фасад для взаимодействия с LLM API.
  *
@@ -22,33 +46,12 @@ export class LLMService {
    * @returns {AsyncGenerator<{content: string, reasoning_details?: any}>} Генератор чанков ответа.
    */
   async *streamResponse(messages) {
-    let configForRepo;
-
-    // Логика выбора конфигурации остается здесь (Фасад), но не реализуется в классах-обертках.
-    if (this.providerType === 'openrouter') {
-      if (!this.config?.apiKey || !this.config?.model) {
-        throw new Error("OpenRouter provider requires 'apiKey' and 'model'.");
-      }
-      configForRepo = {
-        type: 'openrouter',
-        url: 'https://openrouter.ai/api/v1/chat/completions',
-        apiKey: this.config.apiKey,
-        model: this.config.model,
-      };
-    } else if (this.providerType === 'lmstudio') {
-      if (!this.config?.lmstudioUrl || !this.config?.lmstudioModel) {
-        throw new Error("LMStudio provider requires 'lmstudioUrl' and 'lmstudioModel'.");
-      }
-      configForRepo = {
-        type: 'lmstudio', // Используем тип, который распознает llmRepository
-        url: this.config.lmstudioUrl,
-        model: this.config.lmstudioModel,
-      };
-    } else {
+    const buildConfig = providerConfigBuilders[this.providerType];
+    if (!buildConfig) {
       throw new Error(`Unsupported LLM provider: ${this.providerType}`);
     }
 
-    // Делегируем всю сложную логику API-вызова и парсинга в llmRepository.js
+    const configForRepo = buildConfig(this.config);
     const stream = await llmRepository.sendStreamingRequest(configForRepo, messages);
     yield* stream;
   }

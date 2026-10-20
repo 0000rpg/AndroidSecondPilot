@@ -36,9 +36,14 @@ export function useAuthForm() {
   };
   const validateConfirmPassword = () => {
     if (state.value !== 'register') return true;
+
     const isValid = password.value === confirmPassword.value;
-    confirmPasswordError.value = isValid ? '' : 'Пароли не совпадают';
-    inputModes.value.confirmPassword = isValid ? 'correct' : 'error';
+    const result = isValid
+      ? { error: '', mode: 'correct' }
+      : { error: 'Пароли не совпадают', mode: 'error' };
+
+    confirmPasswordError.value = result.error;
+    inputModes.value.confirmPassword = result.mode;
     return isValid;
   };
   const validateRegistrationForm = () => {

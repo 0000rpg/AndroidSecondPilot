@@ -40,9 +40,17 @@ export const useLlmProviderStore = defineStore('llmProvider', {
       this[field] = value;
       if (clearError) this.error = null;
     },
-    setStatus(status, errorMsg = null) {
-      this.status = status;
-      this.error = errorMsg;
+    setLoading() {
+      this.status = 'loading';
+      this.error = null;
+    },
+    setSuccess() {
+      this.status = 'success';
+      this.error = null;
+    },
+    setError(message) {
+      this.status = 'error';
+      this.error = message;
     },
     clearError() {
       this.error = null;

@@ -49,28 +49,23 @@ class MdTableParser {
    * @returns {boolean}
    */
   isSeparatorRow(line) {
-    // Удаляем начальные и конечные пробелы
     const trimmed = line.trim();
     if (!trimmed.includes('|')) return false;
 
-    // Нормализуем: добавляем пайпы по краям, если их нет
     let normalized = trimmed;
     if (!normalized.startsWith('|')) normalized = '|' + normalized;
     if (!normalized.endsWith('|')) normalized = normalized + '|';
 
-    // Разбиваем на ячейки, удаляя внешние пайпы
     const cells = normalized.slice(1, -1).split('|');
-    for (let cell of cells) {
-      const stripped = cell.trim();
-      // Пустая ячейка допустима (например, в начале или конце)
-      if (stripped === '') continue;
-      // Ячейка разделителя должна состоять только из :, -, пробелов
-      if (!/^[\s:;-]+$/.test(stripped)) return false;
-      // Убираем пробелы и проверяем, что остаток соответствует :?-+:?
-      const core = stripped.replace(/\s/g, '');
-      if (!/^:?-+:?$/.test(core)) return false;
-    }
-    return cells.length > 0;
+    return (
+      cells.length > 0 &&
+      cells.every((cell) => {
+        const stripped = cell.trim();
+        if (stripped === '') return true;
+        const core = stripped.replace(/\s/g, '');
+        return /^[\s:;-]+$/.test(stripped) && /^:?-+:?$/.test(core);
+      })
+    );
   }
 
   /**

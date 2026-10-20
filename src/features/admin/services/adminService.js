@@ -79,11 +79,10 @@ export class AdminService {
 
   /**
    * Удаляет аккаунт и обрабатывает логику выхода из системы, если удаленный пользователь активен.
-   * @param {number|string} id - ID аккаунта для удаления.
    * @param {string} username - Имя пользователя.
    * @returns {{success: boolean, message?: string}} Результат операции.
    */
-  deleteAccount(id, username) {
+  deleteAccount(username) {
     if (this.authStore.user === username) {
       // Если удаляем активного пользователя, принудительно выходим из системы
       this.authStore.logout();

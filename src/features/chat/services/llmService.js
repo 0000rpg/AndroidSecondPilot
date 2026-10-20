@@ -45,14 +45,14 @@ export class LLMService {
    * @param {Array<Object>} messages - История сообщений для контекста.
    * @returns {AsyncGenerator<{content: string, reasoning_details?: any}>} Генератор чанков ответа.
    */
-  async *streamResponse(messages) {
+  async *streamResponse(messages, signal) {
     const buildConfig = providerConfigBuilders[this.providerType];
     if (!buildConfig) {
       throw new Error(`Unsupported LLM provider: ${this.providerType}`);
     }
 
     const configForRepo = buildConfig(this.config);
-    const stream = await llmRepository.sendStreamingRequest(configForRepo, messages);
+    const stream = await llmRepository.sendStreamingRequest(configForRepo, messages, signal);
     yield* stream;
   }
 }

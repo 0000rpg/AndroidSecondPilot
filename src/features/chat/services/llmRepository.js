@@ -192,9 +192,13 @@ class LlmRepository {
    * @param {Array<Object>} messages - История сообщений.
    * @returns {AsyncGenerator<{content: string, reasoning_details?: any}>} Генератор чанков.
    */
-  async sendStreamingRequest(config, messages) {
+  async sendStreamingRequest(config, messages, signal) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+    if (signal) {
+      signal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
 
     try {
       const Provider = providerConstructors[config.type];

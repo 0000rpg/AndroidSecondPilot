@@ -39,9 +39,10 @@ export const useChatsStore = defineStore('chats', {
         this.currentChatId = savedChats[0].id || null;
       } else {
         // Если ничего не сохранено, инициализируем с нуля
-        const initialData = this.chatManager.init();
-        this.chatManager.chats = initialData.initialChats; // Обновляем внутренний массив
-        this.currentChatId = initialData.initialChatId; // Устанавливаем ID в Pinia state
+        this.chatManager.ensureInitialized();
+        const initialData = this.chatManager.getInitialState();
+        this.chatManager.chats = initialData.initialChats;
+        this.currentChatId = initialData.initialChatId;
       }
     },
     async createChat(name = null) {

@@ -17,19 +17,17 @@ export class ChatManager {
     return this.chats.length > 0 ? this.chats[0].id : null;
   }
 
-  /**
-   * Инициализирует состояние, если чаты пусты или текущий ID не установлен.
-   * @returns {{initialChats: Array<Object>, initialChatId: string | null}} Объект с начальными данными для Pinia Store.
-   */
-  init() {
+  ensureInitialized() {
     if (this.chats.length === 0) {
-      const newId = this.createChat('Новый чат');
-      return { initialChats: [this.chats[0]], initialChatId: newId };
-    } else if (!this.currentChatId && this.chats.length > 0) {
-      // Если текущий ID не установлен, выбираем первый чат
-      return { initialChats: [...this.chats], initialChatId: this.chats[0].id };
+      this.createChat('Новый чат');
     }
-    return { initialChats: [...this.chats], initialChatId: this.currentChatId };
+  }
+
+  getInitialState() {
+    return {
+      initialChats: [...this.chats],
+      initialChatId: this.currentChatId,
+    };
   }
 
   /**

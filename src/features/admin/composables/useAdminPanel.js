@@ -77,13 +77,14 @@ export function useAdminPanel() {
 
   // Удалить аккаунт
   const deleteAccount = (id, username) => {
-    if (confirm(`Вы уверены, что хотите удалить аккаунт ${username}?`)) {
-      accountsStore.deleteAccount(id);
-      if (authStore.user === username) {
-        authStore.logout();
-        router.push('/');
-      }
-    }
+    if (!confirm(`Вы уверены, что хотите удалить аккаунт ${username}?`)) return;
+
+    accountsStore.deleteAccount(id);
+
+    if (authStore.user !== username) return;
+
+    authStore.logout();
+    router.push('/');
   };
 
   // Выйти из системы

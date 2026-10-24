@@ -6,49 +6,75 @@
  */
 
 /**
- * @fileoverview Фасад для доступа к нативным функциям устройства.
- * Он упрощает взаимодействие с комплексом сложных и разнородных API (Camera, Geolocation, Biometrics).
+ * @fileoverview Фасад для доступа к нативным функциям устройства через Adapter Pattern.
+ * Использует Object Adapter Pattern для интеграции LegacyNativeComponent с Target interface.
+ * 
+ * Архитектура:
+ * - INativeDeviceService (Target) - интерфейс, ожидаемый клиентом
+ * - LegacyNativeComponent (Adaptee) - legacy компонент с несовместимым интерфейсом
+ * - NativeDeviceAdapter - адаптер, использующий композицию для мостирования между ними
+ */
+
+import { NativeDeviceAdapterFactory } from './index';
+
+/**
+ * Фасадная служба для нативных функций через Adapter Pattern.
+ * Автоматически выбирает подходящий адаптер в зависимости от окружения.
  */
 class NativeFacade {
-  constructor() {} // Явный конструктор для лучшей управляемости
+  /**
+   * @private
+   * Current adapter instance - lazily initialized on first use.
+   */
+  #adapter = null;
+
+  /**
+   * Constructor for facade service.
+   * Uses dependency injection via factory pattern.
+   */
+  constructor() {}
+
+  /**
+   * Get or create the current adapter instance.
+   * @private
+   * @returns {INativeDeviceService} Current adapter implementing Target interface.
+   */
+  #getAdapter() {
+    if (!this.#adapter) {
+      console.log('[NativeFacade] Initializing Native Device Adapter');
+      this.#adapter = NativeDeviceAdapterFactory.getAdapter();
+    }
+    return this.#adapter;
+  }
 
   /**
    * Сделать фото с помощью камеры
    * @returns {Promise<File|null>} - файл изображения или null при ошибке
    */
   async takePhoto() {
-    // Проверка на наличие API перед вызовом, чтобы избежать ошибок в разных средах.
-    if (typeof Camera !== 'undefined' && typeof Camera.getPhoto === 'function') {
-      console.log('Используется реальный Capacitor/Camera API.');
-      // Здесь должна быть логика вызова Capacitor
+    const adapter = this.#getAdapter();
+    try {
+      console.log('[NativeFacade] Capturing photo via adapter');
+      return await adapter.takePhoto();
+    } catch (error) {
+      console.error('[NativeFacade] takePhoto failed:', error);
       return null;
     }
-    console.warn('NativeFacade: takePhoto не реализован (заглушка)');
-    return null;
   }
+
   /**
    * Получить текущую геопозицию
    * @returns {Promise<GeolocationPosition|null>}
    */
   async getCurrentPosition() {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        console.warn('Geolocation не поддерживается браузером');
-        resolve(null);
-        return;
-      }
-      // Используем промис для более чистого await в вызывающем коде
-      const promise = new Promise((res, rej) => {
-        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 10000 });
-      });
-
-      promise
-        .then((position) => resolve(position))
-        .catch((error) => {
-          console.warn('Ошибка геолокации:', error);
-          resolve(null);
-        });
-    });
+    const adapter = this.#getAdapter();
+    try {
+      console.log('[NativeFacade] Getting current position via adapter');
+      return await adapter.getCurrentPosition();
+    } catch (error) {
+      console.error('[NativeFacade] getCurrentPosition failed:', error);
+      return null;
+    }
   }
 
   /**
@@ -56,30 +82,28 @@ class NativeFacade {
    * @returns {Promise<boolean>} - успешна ли аутентификация
    */
   async authenticateWithBiometry() {
-    // Проверка наличия API перед вызовом.
-    if (typeof navigator.credentials?.get === 'function') {
-      console.log('Используется реальный WebAuthn/Биометрический API.');
-      // Здесь должна быть логика вызова WebAuthn
-      return true;
+    const adapter = this.#getAdapter();
+    try {
+      console.log('[NativeFacade] Authenticating with biometrics via adapter');
+      return await adapter.authenticateWithBiometry();
+    } catch (error) {
+      console.error('[NativeFacade] authenticateWithBiometry failed:', error);
+      return false;
     }
-    console.warn('NativeFacade: биометрия не реализована (заглушка)');
-    return false;
   }
+
   /**
    * Вибрация устройства
    * @param {number} duration - длительность в миллисекундах
    * @returns {Promise<void>}
    */
   async vibrate(duration = 200) {
-    if (navigator.vibrate) {
-      await new Promise((resolve) =>
-        setTimeout(() => {
-          navigator.vibrate(duration);
-          resolve();
-        }, 10)
-      ); // Небольшая задержка для гарантии вызова API
-    } else {
-      console.warn('Вибрация не поддерживается');
+    const adapter = this.#getAdapter();
+    try {
+      console.log(`[NativeFacade] Vibrating for ${duration}ms via adapter`);
+      return await adapter.vibrate(duration);
+    } catch (error) {
+      console.error('[NativeFacade] vibrate failed:', error);
     }
   }
 
@@ -88,11 +112,26 @@ class NativeFacade {
    * @returns {boolean}
    */
   isNative() {
-    return !!window.Capacitor?.isNativePlatform?.();
+    const adapter = this.#getAdapter();
+    try {
+      console.log('[NativeFacade] Checking native platform via adapter');
+      return adapter.isNative();
+    } catch (error) {
+      console.error('[NativeFacade] isNative check failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Reset adapter instance (useful for testing/reinitialization).
+   */
+  reset() {
+    this.#adapter = null;
   }
 }
 
 /**
  * Экземпляр фасада, который будет использоваться в приложении.
+ * Использует Object Adapter Pattern для интеграции legacy компонентов.
  */
 export const nativeFacade = new NativeFacade();

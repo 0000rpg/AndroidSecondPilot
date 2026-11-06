@@ -1,8 +1,27 @@
 import { defineStore } from 'pinia';
 import { useChatsStore } from './chats';
-import { LLMService } from '../services/llmService';
 import { useLlmProviderStore } from './llmProvider';
-import { MessageSender } from '../managers/MessageSender';
+import { EmptyMessageHandler } from '../handlers/EmptyMessageHandler';
+import { StreamingGuardHandler } from '../handlers/StreamingGuardHandler';
+import { CommandHandler } from '../handlers/CommandHandler';
+import { LlmConfigHandler } from '../handlers/LlmConfigHandler';
+import { LlmSendHandler } from '../handlers/LlmSendHandler';
+
+/**
+ * Собирает цепочку обязанностей для обработки запросов чата.
+ * @returns {EmptyMessageHandler}
+ */
+function buildChatRequestChain() {
+  const chain = new EmptyMessageHandler();
+
+  chain
+    .setNext(new StreamingGuardHandler())
+    .setNext(new CommandHandler())
+    .setNext(new LlmConfigHandler())
+    .setNext(new LlmSendHandler());
+
+  return chain;
+}
 
 /**
  * @fileoverview Store, отвечающий за логику отправки сообщений в LLM.
@@ -25,44 +44,27 @@ export const useMessagesStore = defineStore('messages', {
       const chatsStore = useChatsStore();
       const providerStore = useLlmProviderStore();
       const chat = chatsStore.currentChat;
-      if (!content.trim() || chat.isNull?.()) return;
 
-      // 1. Проверка конфигурации и инициализация LLMService
-      let llmService;
-      try {
-        const provider = providerStore.provider;
-        const config = providerStore.config;
-        if (!config) {
-          this.sendError = 'Конфигурация провайдера не загружена.';
-          return;
-        }
-        llmService = new LLMService(provider, config);
-      } catch (e) {
-        this.sendError = e.message || 'Не удалось инициализировать сервис LLM.';
-        return;
-      }
+      if (chat.isNull?.()) return false;
 
-      this.streaming = true;
-      this.sendError = null;
+      const chain = buildChatRequestChain();
 
-      const sender = new MessageSender(this, chat, content, llmService);
+      const request = {
+        content,
+        chat,
+        store: this,
+        providerStore,
+        chatsStore,
+        llmService: null,
+        handled: false,
+        success: false,
+        error: null,
+      };
 
-      try {
-        await sender.compute();
-      } catch (err) {
-        console.error('Ошибка отправки сообщения:', err);
-        this.sendError = err.message || 'Неизвестная ошибка при генерации ответа.';
-        // Удаляем плейсхолдер в случае ошибки
-        if (
-          chat.messages[sender.assistantIndex] === sender.assistantPlaceholder ||
-          chat.messages[sender.assistantIndex]?.role === 'assistant'
-        ) {
-          chat.messages.splice(sender.assistantIndex, 1);
-          chat.updatedAt = new Date().toISOString();
-        }
-      } finally {
-        this.streaming = false;
-      }
+      const result = await chain.handle(request);
+
+      this.sendError = result.error || null;
+      return result.success;
     },
 
     clearCurrentChatMessages() {

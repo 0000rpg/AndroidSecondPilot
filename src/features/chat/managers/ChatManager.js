@@ -24,8 +24,13 @@ export class ChatManager {
   }
 
   getInitialState() {
+    // Ensure all chats have messages array initialized
+    const initialChats = this.chats.map(chat => ({
+      ...chat,
+      messages: chat.messages || []
+    }));
     return {
-      initialChats: [...this.chats],
+      initialChats: [...initialChats],
       initialChatId: this.currentChatId,
     };
   }
@@ -41,6 +46,7 @@ export class ChatManager {
     const newChat = {
       id,
       name: chatName,
+      messages: [], // Initialize empty messages array
       lastMessageContent: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -59,6 +65,12 @@ export class ChatManager {
     if (index === -1) return { updatedChats: [...this.chats], newActiveId: this.currentChatId };
 
     const updatedChats = [...this.chats];
+    
+    // Ensure messages array exists before removing
+    if (updatedChats[index] && !updatedChats[index].messages) {
+      updatedChats[index].messages = [];
+    }
+    
     updatedChats.splice(index, 1);
 
     // Определяем новый активный ID

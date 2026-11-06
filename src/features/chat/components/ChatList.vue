@@ -90,7 +90,15 @@ const activeMenu = ref(null);
 const editingId = ref(null);
 const editName = ref('');
 
-const lastMessagePreview = (chat) => new ChatExtension(chat).getPreview();
+const lastMessagePreview = (chat) => {
+  try {
+    const extension = new ChatExtension(chat);
+    return extension.getPreview() || 'Нет сообщений';
+  } catch (error) {
+    console.warn('[ChatList] Error getting chat preview:', error.message);
+    return 'Нет сообщений';
+  }
+};
 
 const toggleMenu = (id) => {
   activeMenu.value = activeMenu.value === id ? null : id;

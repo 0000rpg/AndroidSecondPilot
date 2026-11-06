@@ -9,11 +9,11 @@
       <div class="flex h-full w-screen max-w-4xl flex-col">
         <!-- Область сообщений -->
         <div class="custom-scrollbar h-full w-full overflow-y-auto p-4 pb-30">
-    <div v-if="messagesStore.currentMessages.length === 0" class="text-text-a text-center">
+    <div v-if="!messagesStore.currentMessages || messagesStore.currentMessages.length === 0" class="text-text-a text-center">
       Нет сообщений. Начните диалог!
     </div>
     <ChatMessage
-      v-for="(msg, idx) in messagesStore.currentMessages"
+      v-for="(msg, idx) in (messagesStore.currentMessages || [])"
       :key="idx"
       :message="msg"
     />

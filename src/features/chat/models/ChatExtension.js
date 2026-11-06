@@ -35,8 +35,8 @@ export class ChatExtension {
   }
 
   getLastMessage() {
-    const msgs = this.messages;
-    return msgs.length > 0 ? msgs[msgs.length - 1] : null;
+    const msgs = this.messages || [];
+    return (msgs.length > 0) ? msgs[msgs.length - 1] : null;
   }
 
   getPreview() {

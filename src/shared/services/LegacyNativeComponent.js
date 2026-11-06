@@ -4,11 +4,40 @@
  * This component uses older APIs that need to be adapted for the new Target interface.
  */
 
-import { Capacitor } from '@capacitor/core';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Geolocation } from '@capacitor/geolocation';
-import { Biometrics } from '@capacitor/biometrics';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+// Detect if running in Capacitor/native environment
+const isCapacitorEnvironment = typeof window !== 'undefined' && !!window.Capacitor;
+
+let Camera, Geolocation, Biometrics, Haptics;
+
+if (isCapacitorEnvironment) {
+  // Only import Capacitor modules when actually running in native environment
+  try {
+    const capacitorCore = require('@capacitor/core');
+    if (capacitorCore.Camera) Camera = capacitorCore.Camera;
+    
+    try {
+      const cameraModule = require('@capacitor/camera');
+      if (cameraModule.Camera) Camera = cameraModule.Camera;
+    } catch (e) {}
+    
+    try {
+      const geoModule = require('@capacitor/geolocation');
+      if (geoModule.Geolocation) Geolocation = geoModule.Geolocation;
+    } catch (e) {}
+    
+    try {
+      const bioModule = require('@capacitor/biometrics');
+      if (bioModule.Biometrics) Biometrics = bioModule.Biometrics;
+    } catch (e) {}
+    
+    try {
+      const hapticsModule = require('@capacitor/haptics');
+      if (hapticsModule.Haptics) Haptics = hapticsModule.Haptics;
+    } catch (e) {}
+  } catch (error) {
+    console.warn('[LegacyNativeComponent] Failed to load Capacitor modules:', error.message);
+  }
+}
 
 /**
  * Legacy Native Component - Adaptee.
@@ -27,12 +56,17 @@ class LegacyNativeComponent {
    * @returns {Promise<string|null>} Base64 encoded image or null on error.
    */
   async capturePhotoBase64() {
+    if (!Camera) {
+      console.warn('[LegacyNativeComponent] Camera not available (web environment)');
+      return null;
+    }
+    
     try {
       const photo = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
-        resultType: CameraResultType.Base64, // LEGACY: returns base64 instead of URI/File
-        source: CameraSource.Camera,
+        resultType: 'base64',
+        source: { camera: 'back' },
       });
 
       if (!photo.base64String) return null;
@@ -52,6 +86,27 @@ class LegacyNativeComponent {
    * @returns {Promise<GeolocationPosition|null>} Legacy position object or null.
    */
   async getLegacyPosition() {
+    if (!Geolocation) {
+      // Web fallback using browser's built-in geolocation API
+      return new Promise((resolve, reject) => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => resolve({
+              coords: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+              },
+              timestamp: new Date(), // Web version includes timestamp
+            }),
+            (error) => reject(error)
+          );
+        } else {
+          resolve(null);
+        }
+      });
+    }
+
     try {
       const position = await Geolocation.getCurrentPosition();
 
@@ -76,11 +131,16 @@ class LegacyNativeComponent {
    * @returns {Promise<void>} Throws on failure (incompatible with Target).
    */
   async attemptBiometricAuth() {
+    if (!Biometrics) {
+      console.warn('[LegacyNativeComponent] Biometrics not available (web environment)');
+      return false; // Web environment returns false for biometric auth
+    }
+
     try {
       const available = await Biometrics.checkAvailability();
       if (!available.isAvailable) {
         console.warn('Legacy: Биометрия недоступна');
-        return; // Returns undefined instead of false
+        return false; // Returns false instead of undefined
       }
 
       const result = await Biometrics.verify({
@@ -90,7 +150,7 @@ class LegacyNativeComponent {
 
       if (result.verified) {
         console.log('Legacy: Биометрия успешна');
-        return; // Returns undefined instead of true
+        return true; // Returns true instead of undefined
       } else {
         throw new Error('Biometric verification failed'); // Throws instead of returning false
       }
@@ -107,9 +167,16 @@ class LegacyNativeComponent {
    * @returns {Promise<void>}
    */
   async triggerHaptics(duration = 200) {
+    if (!Haptics && !navigator.vibrate) {
+      console.warn('[LegacyNativeComponent] Haptics not available');
+      return Promise.resolve();
+    }
+
     try {
       // LEGACY: Haptics.impact() doesn't support duration, only style
-      await Haptics.impact({ style: ImpactStyle.Medium });
+      if (Haptics) {
+        await Haptics.impact({ style: 'medium' });
+      }
       
       // Additional vibration using legacy navigator API if available
       if (navigator.vibrate) {
@@ -129,7 +196,10 @@ class LegacyNativeComponent {
    * @returns {'android'|'ios'|'web'} Platform name as string (incompatible).
    */
   getPlatformName() {
-    return Capacitor.getPlatform(); // Returns 'android', 'ios', or 'web' as string
+    if (Capacitor) {
+      return Capacitor.getPlatform(); // Returns 'android', 'ios', or 'web' as string
+    }
+    return 'web'; // Default to web in browser environment
   }
 
   /**
@@ -138,5 +208,7 @@ class LegacyNativeComponent {
    */
 }
 
+// Export both the class and instance for different use cases
+export { LegacyNativeComponent as default };
+export { LegacyNativeComponent };
 export const legacyNativeComponent = new LegacyNativeComponent();
-export default LegacyNativeComponent;

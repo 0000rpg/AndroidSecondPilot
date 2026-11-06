@@ -1,5 +1,6 @@
 /**
  * @fileoverview Index file для экспорта сервисов и адаптеров.
+ * Updated: 2026-11-06 - Fixed duplicate export and removed TypeScript syntax
  */
 import { StorageRepositoryFactory } from './storageRepository';
 import { nativeFacade } from './nativeFacade';
@@ -62,7 +63,7 @@ export class NativeDeviceAdapterFactory {
 /**
  * Mock implementation for testing the Target interface.
  */
-class MockNativeDeviceAdapter implements INativeDeviceService {
+class MockNativeDeviceAdapter {
   async takePhoto() {
     console.log('[Mock] takePhoto called');
     // Simulate photo capture delay
@@ -100,4 +101,4 @@ class MockNativeDeviceAdapter implements INativeDeviceService {
   }
 }
 
-export { NativeDeviceAdapterFactory };
+// End of file - no redundant exports

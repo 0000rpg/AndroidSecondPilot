@@ -108,7 +108,7 @@ class BaseLlmProvider {
 /**
  * Реализация для OpenRouter API.
  */
-class OpenRouterProvider extends BaseLlmProvider {
+export class OpenRouterProvider extends BaseLlmProvider {
   constructor(config) {
     super(config);
     if (typeof config.apiKey !== 'string') throw new Error('OpenRouter требует apiKey.');
@@ -144,7 +144,7 @@ class OpenRouterProvider extends BaseLlmProvider {
 /**
  * Реализация для LM Studio / OpenAI-совместимых API.
  */
-class LmStudioProvider extends BaseLlmProvider {
+export class LmStudioProvider extends BaseLlmProvider {
   async sendRequest(messages) {
     const response = await fetch(this.config.url, {
       method: 'POST',
@@ -177,22 +177,18 @@ class LmStudioProvider extends BaseLlmProvider {
  * Класс-фасад, координирующий взаимодействие с LLM провайдерами.
  * Отвечает за общую логику обработки ошибок и таймаутов.
  */
-const providerConstructors = {
-  openrouter: OpenRouterProvider,
-  lmstudio: LmStudioProvider,
-  openai: LmStudioProvider,
-};
-
 class LlmRepository {
   constructor() {}
 
   /**
-   * Выбирает нужный провайдер и выполняет потоковый запрос.
+   * Выполняет потоковый запрос через клиент, созданный фабрикой.
    * @param {Object} config - Конфигурация (type, url, model, apiKey).
    * @param {Array<Object>} messages - История сообщений.
+   * @param {AbortSignal} signal - Сигнал отмены.
+   * @param {LlmProviderFactory} factory - Фабрика семейства провайдера.
    * @returns {AsyncGenerator<{content: string, reasoning_details?: any}>} Генератор чанков.
    */
-  async sendStreamingRequest(config, messages, signal) {
+  async sendStreamingRequest(config, messages, signal, factory) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
@@ -201,12 +197,7 @@ class LlmRepository {
     }
 
     try {
-      const Provider = providerConstructors[config.type];
-      if (!Provider) {
-        throw new Error(`Неподдерживаемый тип провайдера: ${config.type}`);
-      }
-
-      const provider = new Provider(config);
+      const provider = factory.createProvider(config);
       const response = await provider.sendRequest(messages);
       const streamGenerator = await provider.getStream(response);
       return streamGenerator;
